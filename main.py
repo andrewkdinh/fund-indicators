@@ -87,7 +87,7 @@ class Stock:
 
 def main():
   #if __name__ == '__main__':
-  #  install('oauth2client')
+  #  install('requests')
 
   stock = 'spy'
   spy = Stock(stock)
