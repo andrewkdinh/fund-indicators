@@ -33,7 +33,7 @@ class Stock:
     print("Getting available dates for", self, "...")
     # Gets first and last possible dates from each source
     # Also gets all dates from each source
-    
+
     # IEX
     print("\nDates from IEX...")
     firstLastDatesIEX = Stock.getDatesIEX(self, 'firstLast')
@@ -49,14 +49,23 @@ class Stock:
     print("Adding dates available to datesAV")
     datesAV = Stock.getDatesAV(self, 'all')
     #print("All dates (recent first):", datesAV, "\n") # Uncomment line to view output
-    
+    '''
     # Tiingo
     print("\nDates from Tiingo...")
     firstLastDatesTiingo = Stock.getDatesTiingo(self, 'firstLast')
     print("First and last dates:", firstLastDatesTiingo)
     print("Adding dates available to datesTiingo")
-    datesTiingo = Stock.getDatesTiingo(self, 'all')
+    #datesTiingo = Stock.getDatesTiingo(self, 'all') # ADD BACK WHEN DONE
     #print("All dates (recent first):", datesTiingo, "\n") # Uncomment line to view output
+    '''
+    listOfFirstLastDates = []
+    listOfFirstLastDates.append(firstLastDatesIEX)
+    listOfFirstLastDates.append(firstLastDatesAV)
+    #listOfFirstLastDates.append(firstLastDatesTiingo)
+    #print(listOfFirstLastDates)
+    # Find the min and max date
+    firstLastDates = Stock.getFirstLastDate(self, listOfFirstLastDates)
+    print("\nAbsolute first and last date:", firstLastDates)
 
   def getDatesIEX(self, which):
     url = ''.join(('https://api.iextrading.com/1.0/stock/', self, '/chart/5y'))
@@ -187,6 +196,64 @@ class Stock:
         date = temp[0]
         dates.append(date)
     return dates
+
+  def getFirstLastDate(self, listOfFirstLastDates):
+    listOfFirstDates = []
+    listOfLastDates = []
+    #print(len(listOfFirstLastDates))
+    for i in range (0, len(listOfFirstLastDates), 1):
+      temp = listOfFirstLastDates[i]
+      datesTemp = temp[0]
+      #print(datesTemp)
+      firstDate = datesTemp[0]
+      #print(firstDate)
+      lastDate = datesTemp[1]
+      #print(lastDate)
+      listOfFirstDates.append(firstDate)
+      listOfLastDates.append(lastDate)
+    #print(listOfFirstDates)
+    #print(listOfLastDates)
+    for i in range (0, len(listOfFirstDates), 1):
+      date = listOfFirstDates[i]
+      if i == 0:
+        firstDate = date
+        yearMonthDate = firstDate.split('-')
+        firstYear = yearMonthDate[0]
+        firstMonth = yearMonthDate[1]
+        firstDay = yearMonthDate[2]
+      else:
+        yearMonthDate = date.split('-')
+        year = yearMonthDate[0]
+        month = yearMonthDate[1]
+        day = yearMonthDate[2]
+        if year < firstYear or (year == firstYear and month < firstMonth) or (year == firstYear and month == firstMonth and day < firstDay):
+          firstDate = date
+          firstYear = year
+          firstMonth = month
+          firstDay = day
+    #print(firstDate)
+    for i in range(0, len(listOfLastDates),1):
+      date = listOfLastDates[i]
+      if i == 0:
+        lastDate = date
+        yearMonthDate = lastDate.split('-')
+        lastYear = yearMonthDate[0]
+        lastMonth = yearMonthDate[1]
+        lastDay = yearMonthDate[2]
+      else:
+        yearMonthDate = date.split('-')
+        year = yearMonthDate[0]
+        month = yearMonthDate[1]
+        day = yearMonthDate[2]
+      if year > lastYear or (year == lastYear and month > lastMonth) or (year == lastYear and month == lastMonth and day > lastDay):
+        lastDate = date
+        lastYear = year
+        lastMonth = month
+        lastDay = day
+    #print(lastDate)
+    firstLastDates = []
+    firstLastDates.append((firstDate, lastDate))
+    return firstLastDates
 
 def main():
   #if __name__ == '__main__':
