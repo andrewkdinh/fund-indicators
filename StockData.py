@@ -265,4 +265,5 @@ def main():
   Stock.getDates(stock)
   #Stock.printDates(spy)
 
-main()
+if __name__ == "__main__":
+  main()
