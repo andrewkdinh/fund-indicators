@@ -16,85 +16,83 @@ apiBarchart = 'a17fab99a1c21cd6f847e2f82b592838'
 apiTiingo = '2e72b53f2ab4f5f4724c5c1e4d5d4ac0af3f7ca8'
 
 import requests, json
-'''
-def install(package):
-  if hasattr(pip, 'main'):
-        pip.main(['install', package])
-    else:
-        pip._internal.main(['install', package])
-'''
-class Stock:
-  def __init__(self, newStock = '', newfirstLastDates = [], newDates = []):
-    self.name = newStock
-    self.firstLastDates = newfirstLastDates
-    self.dates = newDates
 
-  def getDates(self): # returns beginning and end dates available
-    print("Getting available dates for", self, "...")
-    # Gets first and last possible dates from each source
-    # Also gets all dates from each source
+class Stock:
+  def __init__(self, newName = '', newfirstLastDates = [], newAbsFirstLastDates = [], newDates = [], newListIEX = [], newListAV = [], newListTiingo = []):
+    self.name = newName                             # Name of stock
+    self.firstLastDates = newfirstLastDates         # Dates that at least 2 sources have (or should it be all?) - Maybe let user decide
+    self.absFirstLastDates = newAbsFirstLastDates   # Absolute first and last dates from all sources
+    self.dates = newDates                           # All available dates
+
+    # List from each source containing: ['firstDate', 'lastDate', allDates, values]
+    self.listIEX = newListIEX                     # Dates available from IEX
+    self.listAV = newListAV                       # Dates available from AV
+    self.listTiingo = newListTiingo               # Dates available from Tiingo
+
+  def main(self):
+    # Makes list with [firstDate, lastDate, allDates, values]
 
     # IEX
-    print("\nDates from IEX...")
-    firstLastDatesIEX = Stock.getDatesIEX(self, 'firstLast')
-    print("First and last dates:", firstLastDatesIEX)
-    print("Adding dates available to datesIEX")
-    datesIEX = Stock.getDatesIEX(self, 'all')
-    #print("All dates (recent first):", datesIEX, "\n") # Uncomment line to view output
+    print("\nIEX")
+    listIEX = Stock.getIEX(self)
 
-    # Alpha Vantage
-    print("\nDates from Alpha Vantage...")
-    firstLastDatesAV = Stock.getDatesAV(self, 'firstLast')
-    print("First and last dates:", firstLastDatesAV)
-    print("Adding dates available to datesAV")
-    datesAV = Stock.getDatesAV(self, 'all')
-    #print("All dates (recent first):", datesAV, "\n") # Uncomment line to view output
-    '''
-    # Tiingo
-    print("\nDates from Tiingo...")
-    firstLastDatesTiingo = Stock.getDatesTiingo(self, 'firstLast')
-    print("First and last dates:", firstLastDatesTiingo)
-    print("Adding dates available to datesTiingo")
-    #datesTiingo = Stock.getDatesTiingo(self, 'all') # ADD BACK WHEN DONE
-    #print("All dates (recent first):", datesTiingo, "\n") # Uncomment line to view output
-    '''
-    listOfFirstLastDates = []
-    listOfFirstLastDates.append(firstLastDatesIEX)
-    listOfFirstLastDates.append(firstLastDatesAV)
-    #listOfFirstLastDates.append(firstLastDatesTiingo)
-    #print(listOfFirstLastDates)
-    # Find the min and max date
-    firstLastDates = Stock.getFirstLastDate(self, listOfFirstLastDates)
-    print("\nAbsolute first and last date:", firstLastDates)
+  def set(self, newName, newfirstLastDates, newAbsFirstLastDates, newDates, newListIEX, newListAV, newListTiingo):
+    self.name = newName                             # Name of stock
+    self.firstLastDates = newfirstLastDates         # Dates that at least 2 sources have (or should it be all?) - Maybe let user decide
+    self.absFirstLastDates = newAbsFirstLastDates   # Absolute first and last dates from all sources
+    self.dates = newDates                           # All available dates
 
-  def getDatesIEX(self, which):
+    # List from each source containing: ['firstDate', 'lastDate', allDates, values]
+    self.listIEX = newListIEX                     # Dates available from IEX
+    self.listAV = newListAV                       # Dates available from AV
+    self.listTiingo = newListTiingo               # Dates available from Tiingo
+
+  def setFirstLastDates(newFirstLastDates):
+    self.firstLastDates = newFirstLastDates
+  def setAbsFirstLastDates(newAbsFirstLastDates):
+    self.absFirstLastDates = newAbsFirstLastDates
+  def setDates(newDates):
+    self.dates = newDates
+  def setListIEX(newListIEX):
+    self.listIEX = newListIEX
+  def setListAV(newListAV):
+    self.listAV = newListAV
+  def setListTiingo(newListTiingo):
+    self.listTiingo = newListTiingo
+
+  def getIEX(self):
     url = ''.join(('https://api.iextrading.com/1.0/stock/', self, '/chart/5y'))
     #link = "https://api.iextrading.com/1.0/stock/spy/chart/5y"
     #print("URL:", url)
     f = requests.get(url)
     json_data = f.text
     loaded_json = json.loads(json_data)
-    dates = []
-    if which == 'firstLast':
-      # Find firstDate (comes first)
-      firstLine = loaded_json[0]
-      #print("firstLine:", firstLine)
-      firstDate = firstLine['date']
-      #print("firstDate:",firstDate)
-      # Find finalDate (comes last)
-      #print("Length:", len(loaded_json))
-      lastLine = loaded_json[-1] # Returns last value of the list (Equivalent to len(loaded_json)-1)
+    listIEX = []
+
+    # Adding (firstDate, lastDate) to list
+    # Find firstDate (comes first)
+    firstLine = loaded_json[0]
+    #print("firstLine:", firstLine)
+    firstDate = firstLine['date']
+    #print("firstDate:",firstDate)
+    # Find lastDate (comes last)
+    #print("Length:", len(loaded_json))
+    lastLine = loaded_json[-1] # Returns last value of the list (Equivalent to len(loaded_json)-1)
       #print("lastLine:", lastLine)
-      finalDate = lastLine['date']
-      #print("Final date:", finalDate)
-      dates.append((firstDate, finalDate))
-    elif which == 'all':
-#       for i in range(0, len(loaded_json), 1): # If you want to do oldest first
-        for i in range(len(loaded_json)-1, 0, -1):
-          line = loaded_json[i]
-          date = line['date']
-          dates.append(date)
-    return dates
+    lastDate = lastLine['date']
+    #print("last date:", lastDate)
+    listIEX.append(firstDate)
+    listIEX.append(lastDate)
+
+    allDates = []
+#   for i in range(0, len(loaded_json), 1): # If you want to do oldest first
+    for i in range(len(loaded_json)-1, 0, -1):
+      line = loaded_json[i]
+      date = line['date']
+      allDates.append(date)
+    listIEX.append(allDates)
+    #print(listIEX)
+    return listIEX
 
   def getDatesAV(self, which):
     url = ''.join(('https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=', self, '&apikey=', apiAV))
@@ -164,15 +162,15 @@ class Stock:
     print(list1[endNum])
     '''
     firstDate = loaded_json['startDate']
-    finalDate = loaded_json['endDate']
+    lastDate = loaded_json['endDate']
     #print(firstDate)
-    #print(finalDate)
+    #print(lastDate)
     dates = []
     if which == 'firstLast':
       #print("URL:", url)
-      dates.append((firstDate, finalDate))
+      dates.append((firstDate, lastDate))
     elif which == 'all':
-      url2 = ''.join((url, '/prices?startDate=', firstDate, '&endDate=', finalDate))
+      url2 = ''.join((url, '/prices?startDate=', firstDate, '&endDate=', lastDate))
       # https://api.tiingo.com/tiingo/daily/<ticker>/prices?startDate=2012-1-1&endDate=2016-1-1
       #print("Second URL:", url2)
       requestResponse2 = requests.get(url2, headers=headers)
@@ -256,13 +254,12 @@ class Stock:
     return firstLastDates
 
 def main():
-  #if __name__ == '__main__':
-        #  install('requests')
-
   stock = 'spy'
   spy = Stock(stock)
-  #print(spy.name)
-  Stock.getDates(stock)
+
+  Stock.set('spy', 2,2,2,2,2,2,2)
+
+  Stock.main(stock)
   #Stock.printDates(spy)
 
 if __name__ == "__main__":
