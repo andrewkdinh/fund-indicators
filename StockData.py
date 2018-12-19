@@ -1,10 +1,7 @@
 # StockData.py
 # Andrew Dinh
 # Python 3.6.1
-# Description: 
-'''
-Returns all available dates and prices for each stock requested.
-'''
+# Description: Returns all available dates and prices for each stock requested.
 
 # Alpha Vantage API Key: O42ICUV58EIZZQMU
 # Barchart API Key: a17fab99a1c21cd6f847e2f82b592838
@@ -19,11 +16,12 @@ import requests, json
 from datetime import datetime
 
 class Stock:
-  def __init__(self, newName = '', newfirstLastDates = [], newAbsFirstLastDates = [], newDates = [], newListIEX = [], newListAV = [], newListTiingo = []):
+
+  def __init__(self, newName = '', newfirstLastDates = [], newAbsFirstLastDates = [], newfinalDatesAndClose = [], newAllLists = []):
     self.name = newName                             # Name of stock
     self.firstLastDates = newfirstLastDates         # Dates that at least 2 sources have (or should it be all?) - Maybe let user decide
     self.absFirstLastDates = newAbsFirstLastDates   # Absolute first and last dates from all sources
-    self.dates = newDates                           # All available dates
+    self.finalDatesAndClose = newfinalDatesAndClose # All available dates
     '''
     Format: 
     # List from each source containing: [firstDate, lastDate, allDates, values, timeFrame]
@@ -32,10 +30,8 @@ class Stock:
     values (close) = ['164.6307', 164.6307]
     timeFrame = [days, weeks, years]
     '''
-    self.listIEX = newListIEX                     # Dates available from IEX
-    self.listAV = newListAV                       # Dates available from AV
-    self.listTiingo = newListTiingo               # Dates available from Tiingo
-
+    self.allLists = newAllLists
+  '''
   def set(self, newName, newfirstLastDates, newAbsFirstLastDates, newDates, newListIEX, newListAV, newListTiingo):
     self.name = newName                             # Name of stock
     self.firstLastDates = newfirstLastDates         # Dates that at least 2 sources have (or should it be all?) - Maybe let user decide
@@ -59,9 +55,10 @@ class Stock:
     self.listAV = newListAV
   def setListTiingo(newListTiingo):
     self.listTiingo = newListTiingo
+  '''
 
   def getIEX(self):
-    url = ''.join(('https://api.iextrading.com/1.0/stock/', self, '/chart/5y'))
+    url = ''.join(('https://api.iextrading.com/1.0/stock/', self.name, '/chart/5y'))
     #link = "https://api.iextrading.com/1.0/stock/spy/chart/5y"
     print("\nSending request to:", url)
     f = requests.get(url)
@@ -77,7 +74,6 @@ class Stock:
     firstDate = firstLine['date']
     #print("firstDate:",firstDate)
     # Find lastDate (comes last)
-    #print("Length:", len(loaded_json))
     lastLine = loaded_json[-1] # Returns last value of the list (Equivalent to len(loaded_json)-1)
       #print("lastLine:", lastLine)
     lastDate = lastLine['date']
@@ -126,7 +122,7 @@ class Stock:
 
   def getAV(self):
     listAV = []
-    url = ''.join(('https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=', self, '&apikey=', apiAV))
+    url = ''.join(('https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=', self.name, '&apikey=', apiAV))
     # https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=MSFT&apikey=demo
     print("\nSending request to:", url)
     f = requests.get(url)
@@ -203,7 +199,6 @@ class Stock:
     #print(requestResponse.json())
     loaded_json = requestResponse.json()
     #print(loaded_json)
-    #print(len(loaded_json))
     '''
     list1 = list(loaded_json)
     for i in range (0, len(list1), 1):
@@ -325,6 +320,20 @@ class Stock:
     absFirstLastDates.append(lastDate)
     return absFirstLastDates
 
+  def getFinalDatesAndClose(self):
+    # finalDates and finalClose will coincide (aka i = 1 will correspond to one another)
+    finalDatesAndClose = () # Will combine finalDates then finalClose
+    finalDates = []
+    finalClose = []
+    #print(self.absFirstLastDates)
+    absFirstDate = self.absFirstLastDates[0]
+    absLastDate = self.absFirstLastDates[1]
+    date = absFirstDate
+    #while date != absLastDate or date == absLastDate:
+
+      
+
+
   def main(self):
     # Makes list with ['firstDate', 'lastDate', [allDates], values]
 
@@ -335,37 +344,45 @@ class Stock:
     listIEX = Stock.getIEX(self)
     #print(listIEX)
     listOfFirstLastDates.append((listIEX[0], listIEX[1]))
+    self.allLists.append(listIEX)
 
     # Alpha Vantage
     print("\nAlpha Vantage (AV)")
     listAV = Stock.getAV(self)
     #print(listAV)
     listOfFirstLastDates.append((listAV[0], listAV[1]))
+    self.allLists.append(listAV)
 
     print("\nTiingo") # COMMENTED OUT FOR NOW B/C LIMITED TO 400 REQUESTS/DAY
     #listTiingo = Stock.getTiingo(self)
     #print(listTiingo)
     #listOfFirstLastDates.append((listTiingo[0], listTiingo[1]))
+    # self.allLists.append(listTiingo)
 
     #print(listOfFirstLastDates)
     absFirstLastDates = Stock.getFirstLastDate(self, listOfFirstLastDates)
-    print("\nThe absolute first date was:", absFirstLastDates[0])
-    print("The absolute last date was:", absFirstLastDates[1])
-
-    '''
-    FIGURE OUT HOW TO MAKE EACH OF THESE LISTS AN ATTRIBUTE OF CLASS STOCK
-    self.listIEX = listIEX
-    self.listAV = listAV
-    self.listTiingo = listTiingo
+    print("\nThe absolute first date with close values is:", absFirstLastDates[0])
+    print("The absolute last date with close values is:", absFirstLastDates[1])
 
     self.absFirstLastDates = absFirstLastDates
-    '''
 
-def main():
-  stock = 'spy'
-  spy = Stock(stock)
-  Stock.main(stock)
-  #Stock.printDates(spy)
+    finalDatesAndClose = Stock.getFinalDatesAndClose(self) # Returns [List of Dates, List of Corresponding Close Values]
+    #print(finalDatesAndClose)
+
+    #print(self.allLists)
+
+def main(): # For testing purposes
+  stockName = 'aapl'
+  stock1 = Stock(stockName)
+  print("Finding available dates and close values for", stock1.name)
+  Stock.main(stock1)
+
+def imported(): # When this file has been imported
+  # Add stuff here
+  return
 
 if __name__ == "__main__":
   main()
+
+else:
+  imported()
