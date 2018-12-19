@@ -193,7 +193,7 @@ class Stock:
       'Content-Type': 'application/json',
       'Authorization' : token
        }
-    url = ''.join(('https://api.tiingo.com/tiingo/daily/', self))
+    url = ''.join(('https://api.tiingo.com/tiingo/daily/', self.name))
     print("\nSending request to:", url)
     requestResponse = requests.get(url, headers=headers)
     #print(requestResponse.json())
@@ -281,15 +281,15 @@ class Stock:
       date = listOfFirstDates[i]
       if i == 0:
         firstDate = date
-        yearMonthDate = firstDate.split('-')
-        firstYear = yearMonthDate[0]
-        firstMonth = yearMonthDate[1]
-        firstDay = yearMonthDate[2]
+        yearMonthDay = firstDate.split('-')
+        firstYear = yearMonthDay[0]
+        firstMonth = yearMonthDay[1]
+        firstDay = yearMonthDay[2]
       else:
-        yearMonthDate = date.split('-')
-        year = yearMonthDate[0]
-        month = yearMonthDate[1]
-        day = yearMonthDate[2]
+        yearMonthDay = date.split('-')
+        year = yearMonthDay[0]
+        month = yearMonthDay[1]
+        day = yearMonthDay[2]
         if year < firstYear or (year == firstYear and month < firstMonth) or (year == firstYear and month == firstMonth and day < firstDay):
           firstDate = date
           firstYear = year
@@ -300,15 +300,15 @@ class Stock:
       date = listOfLastDates[i]
       if i == 0:
         lastDate = date
-        yearMonthDate = lastDate.split('-')
-        lastYear = yearMonthDate[0]
-        lastMonth = yearMonthDate[1]
-        lastDay = yearMonthDate[2]
+        yearMonthDay = lastDate.split('-')
+        lastYear = yearMonthDay[0]
+        lastMonth = yearMonthDay[1]
+        lastDay = yearMonthDay[2]
       else:
-        yearMonthDate = date.split('-')
-        year = yearMonthDate[0]
-        month = yearMonthDate[1]
-        day = yearMonthDate[2]
+        yearMonthDay = date.split('-')
+        year = yearMonthDay[0]
+        month = yearMonthDay[1]
+        day = yearMonthDay[2]
       if year > lastYear or (year == lastYear and month > lastMonth) or (year == lastYear and month == lastMonth and day > lastDay):
         lastDate = date
         lastYear = year
@@ -322,17 +322,89 @@ class Stock:
 
   def getFinalDatesAndClose(self):
     # finalDates and finalClose will coincide (aka i = 1 will correspond to one another)
-    finalDatesAndClose = () # Will combine finalDates then finalClose
+    finalDatesAndClose = [] # Will combine finalDates then finalClose
     finalDates = []
     finalClose = []
     #print(self.absFirstLastDates)
     absFirstDate = self.absFirstLastDates[0]
     absLastDate = self.absFirstLastDates[1]
     date = absFirstDate
-    #while date != absLastDate or date == absLastDate:
 
-      
+    allLists = self.allLists
+    while date != absLastDate: # DOESN'T DO LAST DATE
+      tempListOfClose = []
+      found = False
+      for j in range(0, len(allLists), 1):      # Look for date in all lists
+        list1 = allLists[j]
+        listOfDates = list1[2]
+        listOfClose = list1[3]
+        for k in range(0, len(listOfDates), 1):
+          if listOfDates[k] == date:
+            if found == False:
+              finalDates.append(date)
+              found = True
+            #print(listOfDates[k])
+            #print(listOfClose[k])
+            #print(listOfClose)
+            tempListOfClose.append(float(listOfClose[k]))
+            k = len(listOfDates) # Dates don't repeat
 
+      if found == True:
+        sum = 0
+        for r in range(0, len(tempListOfClose), 1):
+          sum = sum + tempListOfClose[r]
+        close = sum/len(tempListOfClose)
+
+        finalClose.append(close)
+        #print(close)
+
+      # Go to the next day
+      yearMonthDay = date.split('-')
+      year = int(yearMonthDay[0])
+      month = int(yearMonthDay[1])
+      day = int(yearMonthDay[2])
+
+      day = day + 1
+      if day == 32 and month == 12: # Next year
+        day = 1
+        month = 2
+        year = year + 1
+      elif day == 32:              # Next month
+        month = month + 1
+        day = 1
+      if day < 10:
+        day = ''.join(('0', str(day)))
+      if month < 10:
+        month = ''.join(('0', str(month)))
+      date = ''.join((str(year), '-', str(month), '-', str(day)))
+      #print(date)
+
+    # For last date
+    finalDates.append(date)
+    tempListOfClose = []
+    for j in range(0, len(allLists), 1):      # Look for date in all lists
+      list1 = allLists[j]
+      listOfDates = list1[2]
+      listOfClose = list1[3]
+      for k in range(0, len(listOfDates), 1):
+        if listOfDates[k] == date:
+          tempListOfClose.append(float(listOfClose[k]))
+          k = len(listOfDates) # Dates don't repeat
+    sum = 0
+    for r in range(0, len(tempListOfClose), 1):
+      sum = sum + tempListOfClose[r]
+    close = sum/len(tempListOfClose)
+    finalClose.append(close)
+    #print(finalDates)
+    #print(finalClose)
+
+    # Want lists from most recent to oldest, comment this out if you don't want that
+    finalDates = list(reversed(finalDates))
+    finalClose = list(reversed(finalClose))    
+
+    finalDatesAndClose.append(finalDates)
+    finalDatesAndClose.append(finalClose)
+    return finalDatesAndClose
 
   def main(self):
     # Makes list with ['firstDate', 'lastDate', [allDates], values]
@@ -353,23 +425,25 @@ class Stock:
     listOfFirstLastDates.append((listAV[0], listAV[1]))
     self.allLists.append(listAV)
 
-    print("\nTiingo") # COMMENTED OUT FOR NOW B/C LIMITED TO 400 REQUESTS/DAY
-    #listTiingo = Stock.getTiingo(self)
+    # COMMENTED OUT FOR NOW B/C LIMITED TO 400 REQUESTS/DAY
+    print("\nTiingo")
+    listTiingo = Stock.getTiingo(self)
     #print(listTiingo)
-    #listOfFirstLastDates.append((listTiingo[0], listTiingo[1]))
-    # self.allLists.append(listTiingo)
-
-    #print(listOfFirstLastDates)
-    absFirstLastDates = Stock.getFirstLastDate(self, listOfFirstLastDates)
-    print("\nThe absolute first date with close values is:", absFirstLastDates[0])
-    print("The absolute last date with close values is:", absFirstLastDates[1])
-
-    self.absFirstLastDates = absFirstLastDates
-
-    finalDatesAndClose = Stock.getFinalDatesAndClose(self) # Returns [List of Dates, List of Corresponding Close Values]
-    #print(finalDatesAndClose)
+    listOfFirstLastDates.append((listTiingo[0], listTiingo[1]))
+    self.allLists.append(listTiingo)
+    
 
     #print(self.allLists)
+    #print(listOfFirstLastDates)
+    self.absFirstLastDates = Stock.getFirstLastDate(self, listOfFirstLastDates)
+    print("\nThe absolute first date with close values is:", self.absFirstLastDates[0])
+    print("The absolute last date with close values is:", self.absFirstLastDates[1])
+
+    print("\nCombining dates and finding average close values")
+    self.finalDatesAndClose = Stock.getFinalDatesAndClose(self) # Returns [List of Dates, List of Corresponding Close Values]
+    #print("All dates available:", self.finalDatesAndClose[0])
+    #print("All close values:\n", self.finalDatesAndClose[1])
+    print("Uncomment above line in code to see output")
 
 def main(): # For testing purposes
   stockName = 'aapl'
