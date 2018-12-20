@@ -13,6 +13,7 @@ apiBarchart = 'a17fab99a1c21cd6f847e2f82b592838'
 apiTiingo = '2e72b53f2ab4f5f4724c5c1e4d5d4ac0af3f7ca8' # Limited to 400 requests/day
 
 import requests, json
+import importlib.util, sys # To check whether a package is installed
 from datetime import datetime
 
 class Stock:
@@ -407,6 +408,12 @@ class Stock:
     return finalDatesAndClose
 
   def main(self):
+
+    package_name = 'requests'
+    spec = importlib.util.find_spec(package_name)
+    if spec is None:
+      print(package_name +" is not installed\nPlease type in 'pip install -r requirements.txt' to install all required packages")
+
     # Makes list with ['firstDate', 'lastDate', [allDates], values]
 
     listOfFirstLastDates = []
@@ -426,12 +433,13 @@ class Stock:
     self.allLists.append(listAV)
 
     # COMMENTED OUT FOR NOW B/C LIMITED TO 400 REQUESTS/DAY
+    '''
     print("\nTiingo")
     listTiingo = Stock.getTiingo(self)
     #print(listTiingo)
     listOfFirstLastDates.append((listTiingo[0], listTiingo[1]))
     self.allLists.append(listTiingo)
-    
+    '''
 
     #print(self.allLists)
     #print(listOfFirstLastDates)
