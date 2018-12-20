@@ -3,14 +3,29 @@
 # Python 3.6.1
 # Description: Returns all available dates and prices for each stock requested.
 
+'''
+Available API's: Can it do mutual funds?
+IEX: No
+Alpha Vantage (AV): Yes
+Tiingo: Yes
+Barchart: No
+'''
+
 # Alpha Vantage API Key: O42ICUV58EIZZQMU
-# Barchart API Key: a17fab99a1c21cd6f847e2f82b592838
+# Barchart API Key: a17fab99a1c21cd6f847e2f82b592838 # Possible other one? f40b136c6dc4451f9136bb53b9e70ffa
 # Tiingo API Key: 2e72b53f2ab4f5f4724c5c1e4d5d4ac0af3f7ca8
 # If you're going to take these API keys and abuse it, you should really reconsider your life priorities
 
 apiAV = 'O42ICUV58EIZZQMU'
-apiBarchart = 'a17fab99a1c21cd6f847e2f82b592838'
-apiTiingo = '2e72b53f2ab4f5f4724c5c1e4d5d4ac0af3f7ca8' # Limited to 400 requests/day
+#apiBarchart = 'a17fab99a1c21cd6f847e2f82b592838'        # 150 getHistory queries per day
+apiBarchart = 'f40b136c6dc4451f9136bb53b9e70ffa'
+apiTiingo = '2e72b53f2ab4f5f4724c5c1e4d5d4ac0af3f7ca8'
+'''
+Monthly Bandwidth = 5 GB
+Hourly Requests = 500
+Daily Requests = 20,000
+Symbol Requests = 500
+'''
 
 import requests, json
 import importlib.util, sys # To check whether a package is installed
@@ -91,8 +106,9 @@ class Stock:
       date = line['date']
       allDates.append(date)
     listIEX.append(allDates)
-    #print(listIEX[1])
-    print("Uncomment above line in code to see output")
+
+    #print(listIEX[2])
+    print(len(listIEX[2]), "dates")
 
     print("\nFinding close values for each date")
     values = []
@@ -103,7 +119,7 @@ class Stock:
       values.append(value)
     listIEX.append(values)
     #print(listIEX[3])
-    print("Uncomment above line in code to see output")
+    print(len(listIEX[3]), "close values")
 
     print("\nFinding time frame given [days, weeks, years]")
     timeFrame = []
@@ -147,7 +163,7 @@ class Stock:
     print(listAV[0], ',', listAV[1])
     print("\nFinding all dates given")
     #print(listAV[2])
-    print("Uncomment above line in code to see output")
+    print(len(listAV[2]), "dates")
 
     print("\nFinding close values for each date")
     values = []
@@ -161,7 +177,7 @@ class Stock:
     #i = listOfDates[0]
     #print(monthlyTimeSeries[i])
     #print(listAV[3])
-    print("Uncomment above line in code to see output")
+    print(len(listAV[3]), "close values")
 
     print("\nFinding time frame given [days, weeks, years]")
     timeFrame = []
@@ -242,13 +258,13 @@ class Stock:
       values.append(value)
     listTiingo.append(dates)
     #print(listTiingo[2])
-    print("Uncomment above line in code to see output")
+    print(len(listTiingo[2]), "dates")
 
     print("Finding close values for each date")
     # Used loop from finding dates
     listTiingo.append(values)
     #print(listTiingo[3])
-    print("Uncomment above line in code to see output")
+    print(len(listAV[3]), "close values")
 
     print("Finding time frame given [days, weeks, years]")
     timeFrame = []
@@ -409,22 +425,25 @@ class Stock:
 
   def main(self):
 
-    package_name = 'requests'
-    spec = importlib.util.find_spec(package_name)
-    if spec is None:
-      print(package_name +" is not installed\nPlease type in 'pip install -r requirements.txt' to install all required packages")
+    packages = ['requests']
+    for i in range(0, len(packages), 1):
+      package_name = packages[i]
+      spec = importlib.util.find_spec(package_name)
+      if spec is None:
+        print(package_name +" is not installed\nPlease type in 'pip install -r requirements.txt' to install all required packages")
 
     # Makes list with ['firstDate', 'lastDate', [allDates], values]
 
     listOfFirstLastDates = []
 
     # IEX
+    
     print("\nIEX")
     listIEX = Stock.getIEX(self)
     #print(listIEX)
     listOfFirstLastDates.append((listIEX[0], listIEX[1]))
     self.allLists.append(listIEX)
-
+    
     # Alpha Vantage
     print("\nAlpha Vantage (AV)")
     listAV = Stock.getAV(self)
@@ -432,7 +451,7 @@ class Stock:
     listOfFirstLastDates.append((listAV[0], listAV[1]))
     self.allLists.append(listAV)
 
-    # COMMENTED OUT FOR NOW B/C LIMITED TO 400 REQUESTS/DAY
+    # COMMENTED OUT FOR NOW B/C LIMITED
     '''
     print("\nTiingo")
     listTiingo = Stock.getTiingo(self)
@@ -440,21 +459,25 @@ class Stock:
     listOfFirstLastDates.append((listTiingo[0], listTiingo[1]))
     self.allLists.append(listTiingo)
     '''
-
+    
     #print(self.allLists)
     #print(listOfFirstLastDates)
     self.absFirstLastDates = Stock.getFirstLastDate(self, listOfFirstLastDates)
     print("\nThe absolute first date with close values is:", self.absFirstLastDates[0])
     print("The absolute last date with close values is:", self.absFirstLastDates[1])
 
-    print("\nCombining dates and finding average close values")
+    print("\nCombining dates and averaging close values")
     self.finalDatesAndClose = Stock.getFinalDatesAndClose(self) # Returns [List of Dates, List of Corresponding Close Values]
     #print("All dates available:", self.finalDatesAndClose[0])
     #print("All close values:\n", self.finalDatesAndClose[1])
-    print("Uncomment above line in code to see output")
+    finalDates = self.finalDatesAndClose[0]
+    finalClose = self.finalDatesAndClose[1]
+    print(len(finalDates), "dates:", finalDates[len(finalDates)-1], "...", finalDates[0])
+    print(len(finalClose), "close values:", finalClose[len(finalClose)-1], "...", finalClose[0])
+    #print("Uncomment above line in code to see output")
 
 def main(): # For testing purposes
-  stockName = 'aapl'
+  stockName = 'IWV'
   stock1 = Stock(stockName)
   print("Finding available dates and close values for", stock1.name)
   Stock.main(stock1)

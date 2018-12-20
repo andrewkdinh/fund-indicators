@@ -15,4 +15,11 @@ Gives correlation value using equation at the end (from 0 to 1)
 FIRST TESTING WITH EXPENSE RATIO
 '''
 
-import StockData
+from StockData import Stock
+
+#listOfStocks = [spy, ]
+
+stockName = 'IWV'
+stock1 = Stock(stockName)
+print("Finding available dates and close values for", stock1.name)
+Stock.main(stock1)
