@@ -17,9 +17,23 @@ FIRST TESTING WITH EXPENSE RATIO
 
 from StockData import Stock
 
-#listOfStocks = [spy, ]
+listOfStocks = []
+numberOfStocks = int(input("How many stocks or mutual funds would you like to analyze? "))
+for i in range(0, numberOfStocks, 1):
+	print("Stock", i+1, ": ", end='')
+	stockName = str(input())
+	listOfStocks.append(i)
+	listOfStocks[i] = Stock()
+	listOfStocks[i].setName(stockName)
+	print(listOfStocks[i].name)
 
+for i in range(0, numberOfStocks, 1):
+	print("\n")
+	print(listOfStocks[i].name)
+	Stock.main(listOfStocks[i])
+'''
 stockName = 'IWV'
 stock1 = Stock(stockName)
 print("Finding available dates and close values for", stock1.name)
 Stock.main(stock1)
+'''
