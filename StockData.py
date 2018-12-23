@@ -14,12 +14,14 @@ Barchart: No
 # Alpha Vantage API Key: O42ICUV58EIZZQMU
 # Barchart API Key: a17fab99a1c21cd6f847e2f82b592838 # Possible other one? f40b136c6dc4451f9136bb53b9e70ffa
 # Tiingo API Key: 2e72b53f2ab4f5f4724c5c1e4d5d4ac0af3f7ca8
+# Tradier API Key: n26IFFpkOFRVsB5SNTVNXicE5MPD
 # If you're going to take these API keys and abuse it, you should really reconsider your life priorities
 
 apiAV = 'O42ICUV58EIZZQMU'
 #apiBarchart = 'a17fab99a1c21cd6f847e2f82b592838'        # 150 getHistory queries per day
 apiBarchart = 'f40b136c6dc4451f9136bb53b9e70ffa'
 apiTiingo = '2e72b53f2ab4f5f4724c5c1e4d5d4ac0af3f7ca8'
+apiTradier = 'n26IFFpkOFRVsB5SNTVNXicE5MPD'
 '''
 Monthly Bandwidth = 5 GB
 Hourly Requests = 500
@@ -451,16 +453,16 @@ class Stock:
       return
 
     listOfFirstLastDates = []
+    self.allLists = []
 
     # IEX
-    
     print("\nIEX")
     listIEX = Stock.getIEX(self)
     #print(listIEX)
     if listIEX != 'Not available':
       listOfFirstLastDates.append((listIEX[0], listIEX[1]))
       self.allLists.append(listIEX)
-    
+
     # Alpha Vantage
     print("\nAlpha Vantage (AV)")
     listAV = Stock.getAV(self)
@@ -481,9 +483,9 @@ class Stock:
     
     #print(self.allLists)
     #print(listOfFirstLastDates)
-    print("\n")
-    print(len(self.allLists), "available sources for", self.name)
     if (len(self.allLists) > 0):
+      print("\n")
+      print(len(self.allLists), "available sources for", self.name)
       self.absFirstLastDates = Stock.getFirstLastDate(self, listOfFirstLastDates)
       print("\nThe absolute first date with close values is:", self.absFirstLastDates[0])
       print("The absolute last date with close values is:", self.absFirstLastDates[1])
@@ -501,7 +503,7 @@ class Stock:
       print("No sources have data for", self.name)
 
 def main(): # For testing purposes
-  stockName = 'IWV'
+  stockName = 'spy'
   stock1 = Stock(stockName)
   print("Finding available dates and close values for", stock1.name)
   Stock.main(stock1)

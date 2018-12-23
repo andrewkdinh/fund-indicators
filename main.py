@@ -20,17 +20,21 @@ from StockData import Stock
 listOfStocks = []
 numberOfStocks = int(input("How many stocks or mutual funds would you like to analyze? "))
 for i in range(0, numberOfStocks, 1):
-	print("Stock", i+1, ": ", end='')
-	stockName = str(input())
-	listOfStocks.append(i)
-	listOfStocks[i] = Stock()
-	listOfStocks[i].setName(stockName)
-	print(listOfStocks[i].name)
+  print("Stock", i+1, ": ", end='')
+  stockName = str(input())
+  listOfStocks.append(i)
+  listOfStocks[i] = Stock()
+  listOfStocks[i].setName(stockName)
+  #print(listOfStocks[i].name)
 
 for i in range(0, numberOfStocks, 1):
-	print("\n")
-	print(listOfStocks[i].name)
-	Stock.main(listOfStocks[i])
+  print("\n")
+  print(listOfStocks[i].name)
+  Stock.main(listOfStocks[i])
+
+#print(listOfStocks[0].name, listOfStocks[0].absFirstLastDates, listOfStocks[0].finalDatesAndClose)
+print("\nWhich indicator would you like to look at? \n1. Expense Ratio")
+indicator = str(input)
 '''
 stockName = 'IWV'
 stock1 = Stock(stockName)
