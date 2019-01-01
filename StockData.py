@@ -60,6 +60,9 @@ class Stock:
   def setName(self, newName):
     self.name = newName
 
+  def getAllLists(self):
+    return self.allLists
+
   def getIEX(self):
     url = ''.join(('https://api.iextrading.com/1.0/stock/', self.name, '/chart/5y'))
     #link = "https://api.iextrading.com/1.0/stock/spy/chart/5y"
@@ -434,7 +437,8 @@ class Stock:
         socket.create_connection(("www.andrewkdinh.com", 80))
         return True
     except OSError:
-        pass
+        #pass
+        print("\nNo internet connection!")
     return False
 
   def main(self):
@@ -449,7 +453,6 @@ class Stock:
     # Test internet connection
     internetConnection = Stock.is_connected()
     if internetConnection == False:
-      print("\nNo internet connection!")
       return
 
     listOfFirstLastDates = []
@@ -498,7 +501,6 @@ class Stock:
       finalClose = self.finalDatesAndClose[1]
       print(len(finalDates), "unique dates:", finalDates[len(finalDates)-1], "...", finalDates[0])
       print(len(finalClose), "close values:", finalClose[len(finalClose)-1], "...", finalClose[0])
-      #print("Uncomment above line in code to see output")
     else:
       print("No sources have data for", self.name)
 
