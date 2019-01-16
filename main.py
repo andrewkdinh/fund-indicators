@@ -1,7 +1,7 @@
 # main.py
 # Andrew Dinh
 # Python 3.6.1
-# Description: 
+# Description:
 '''
 Asks users for mutual funds/stocks to compare
 Asks to be compared (expense ratio, turnover, market capitalization, or persistence)
@@ -15,7 +15,7 @@ Gives correlation value using equation at the end (from 0 to 1)
 FIRST TESTING WITH EXPENSE RATIO
 '''
 
-from StockData import Stock
+from StockData import StockData
 
 listOfStocks = []
 numberOfStocks = int(input("How many stocks or mutual funds would you like to analyze? "))
@@ -23,48 +23,54 @@ for i in range(0, numberOfStocks, 1):
   	print("Stock", i+1, ": ", end='')
   	stockName = str(input())
   	listOfStocks.append(i)
-  	listOfStocks[i] = Stock()
+  	listOfStocks[i] = StockData()
   	listOfStocks[i].setName(stockName)
   	#print(listOfStocks[i].name)
 
 sumOfListLengths = 0
 for i in range(0, numberOfStocks, 1):
   	print(listOfStocks[i].name)
-  	Stock.main(listOfStocks[i])
+  	StockData.main(listOfStocks[i])
   	# Count how many stocks are available
-  	temp = Stock.getAllLists(listOfStocks[i])
+  	temp = StockData.returnAllLists(listOfStocks[i])
   	sumOfListLengths = sumOfListLengths + len(temp)
 
 if sumOfListLengths == 0:
-	print("No sources have stock data for given stocks")
+    print("No sources have data for given stocks")
+    exit()
 
-else:
-	#print(listOfStocks[0].name, listOfStocks[0].absFirstLastDates, listOfStocks[0].finalDatesAndClose)
-	indicatorFound = False
-	while indicatorFound == False:
-		print("\n1. Expense Ratio\n2. Asset Size\n3. Turnover\n4. Persistence\nWhich indicator would you like to look at? ", end='')
-		indicator = str(input())
-		indicatorFound = True
+# Find return over time using either Jensen's Alpha, Sharpe Ratio, Sortino Ratio, or Treynor Ratio
+#from StockReturn import Return
 
-		if indicator == 'Expense Ratio' or indicator == '1' or indicator == 'expense ratio':
-			print('\nExpense Ratio')
 
-		elif indicator == 'Asset Size' or indicator == '2' or indicator == 'asset size':
-			print('\nAsset Size')
+# Runs correlation or regression study
+#print(listOfStocks[0].name, listOfStocks[0].absFirstLastDates, listOfStocks[0].finalDatesAndClose)
+indicatorFound = False
+while indicatorFound == False:
+	print("\n1. Expense Ratio\n2. Asset Size\n3. Turnover\n4. Persistence\nWhich indicator would you like to look at? ", end='')
+	indicator = str(input())
+	indicatorFound = True
 
-		elif indicator == 'Turnover' or indicator == '3' or indicator == 'turnover':
-			print('\nTurnover')
+	if indicator == 'Expense Ratio' or indicator == '1' or indicator == 'expense ratio':
+        #from ExpenseRatio import ExpenseRatio
+		print('\nExpense Ratio')
 
-		elif indicator == 'Persistence' or indicator == '4' or indicator == 'persistence':
-			print('\nPersistence')
+	elif indicator == 'Asset Size' or indicator == '2' or indicator == 'asset size':
+		print('\nAsset Size')
 
-		else:
-			indicatorFound = False
-			print('\nInvalid input, please enter indicator again')		
+	elif indicator == 'Turnover' or indicator == '3' or indicator == 'turnover':
+		print('\nTurnover')
+
+	elif indicator == 'Persistence' or indicator == '4' or indicator == 'persistence':
+		print('\nPersistence')
+
+	else:
+		indicatorFound = False
+		print('\nInvalid input, please enter indicator again')
 
 '''
 stockName = 'IWV'
 stock1 = Stock(stockName)
 print("Finding available dates and close values for", stock1.name)
-Stock.main(stock1)
+StockData.main(stock1)
 '''

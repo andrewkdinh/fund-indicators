@@ -33,16 +33,16 @@ import requests, json, socket
 import importlib.util, sys # To check whether a package is installed
 from datetime import datetime
 
-class Stock:
+class StockData:
 
-  def __init__(self, newName = '', newFirstLastDates = [], newAbsFirstLastDates = [], newFinalDatesAndClose = [], newAllLists = []):
+  def __init__(self, newName = '', newAbsFirstLastDates = [], newFinalDatesAndClose = [], newFinalDatesAndClose2 = [],newAllLists = []):
     self.name = newName                             # Name of stock
-    self.firstLastDates = newFirstLastDates         # Dates that at least 2 sources have (or should it be all?) - Maybe let user decide
     self.absFirstLastDates = newAbsFirstLastDates   # Absolute first and last dates from all sources
-    self.finalDatesAndClose = newFinalDatesAndClose # All available dates
+    self.finalDatesAndClose = newFinalDatesAndClose # All available dates with corresponding close values
+    self.finalDatesAndClose2 = newFinalDatesAndClose2 # After some consideration, I decided to keep what I had already done here and make a new list that's the same except dates are in datetime format
     self.allLists = newAllLists
     '''
-    Format: 
+    Format:
     # List from each source containing: [firstDate, lastDate, allDates, values, timeFrame]
     # firstDate & lastDate = '2018-12-18' (year-month-date)
     allDates = ['2018-12-17', '2018-12-14'] (year-month-date)
@@ -59,9 +59,18 @@ class Stock:
 
   def setName(self, newName):
     self.name = newName
-
-  def getAllLists(self):
+  def returnName(self):
+    return self.name
+  def returnAllLists(self):
     return self.allLists
+  def returnAbsFirstLastDates(self):
+    return self.absFirstLastDates
+  def returnAllLists(self):
+    return self.allLists
+  def returnFinalDatesAndClose(self):
+    return self.finalDatesAndClose
+  def returnFinalDatesAndClose2(self):
+    return self.finalDatesAndClose2
 
   def getIEX(self):
     url = ''.join(('https://api.iextrading.com/1.0/stock/', self.name, '/chart/5y'))
@@ -424,11 +433,28 @@ class Stock:
 
     # Want lists from most recent to oldest, comment this out if you don't want that
     finalDates = list(reversed(finalDates))
-    finalClose = list(reversed(finalClose))    
+    finalClose = list(reversed(finalClose))
 
     finalDatesAndClose.append(finalDates)
     finalDatesAndClose.append(finalClose)
     return finalDatesAndClose
+
+  def datetimeDates(self):
+      finalDatesAndClose2 = []
+      finalDatesAndClose = self.finalDatesAndClose
+      finalDatesStrings = finalDatesAndClose[0]
+      finalClose = finalDatesAndClose[1]
+      finalDates = []
+
+      for i in range(0, len(finalDatesStrings), 1):
+          from Functions import Functions
+          temp = Functions.stringToDate(finalDatesStrings[i])
+          finalDates.append(temp)
+      #print(finalDates)
+
+      finalDatesAndClose2.append(finalDates)
+      finalDatesAndClose2.append(finalClose)
+      return(finalDatesAndClose2)
 
   def is_connected():
     try:
@@ -451,7 +477,7 @@ class Stock:
         print(package_name +" is not installed\nPlease type in 'pip install -r requirements.txt' to install all required packages")
 
     # Test internet connection
-    internetConnection = Stock.is_connected()
+    internetConnection = StockData.is_connected()
     if internetConnection == False:
       return
 
@@ -460,7 +486,7 @@ class Stock:
 
     # IEX
     print("\nIEX")
-    listIEX = Stock.getIEX(self)
+    listIEX = StockData.getIEX(self)
     #print(listIEX)
     if listIEX != 'Not available':
       listOfFirstLastDates.append((listIEX[0], listIEX[1]))
@@ -468,7 +494,7 @@ class Stock:
 
     # Alpha Vantage
     print("\nAlpha Vantage (AV)")
-    listAV = Stock.getAV(self)
+    listAV = StockData.getAV(self)
     #print(listAV)
     if listAV != 'Not available':
       listOfFirstLastDates.append((listAV[0], listAV[1]))
@@ -477,38 +503,43 @@ class Stock:
     # COMMENTED OUT FOR NOW B/C LIMITED
     '''
     print("\nTiingo")
-    listTiingo = Stock.getTiingo(self)
+    listTiingo = StockData.getTiingo(self)
     #print(listTiingo)
     if listTiingo != 'Not available':
       listOfFirstLastDates.append((listTiingo[0], listTiingo[1]))
       self.allLists.append(listTiingo)
     '''
-    
+
     #print(self.allLists)
     #print(listOfFirstLastDates)
     if (len(self.allLists) > 0):
       print("\n")
       print(len(self.allLists), "available sources for", self.name)
-      self.absFirstLastDates = Stock.getFirstLastDate(self, listOfFirstLastDates)
+      self.absFirstLastDates = StockData.getFirstLastDate(self, listOfFirstLastDates)
       print("\nThe absolute first date with close values is:", self.absFirstLastDates[0])
       print("The absolute last date with close values is:", self.absFirstLastDates[1])
 
       print("\nCombining dates and averaging close values")
-      self.finalDatesAndClose = Stock.getFinalDatesAndClose(self) # Returns [List of Dates, List of Corresponding Close Values]
+      self.finalDatesAndClose = StockData.getFinalDatesAndClose(self) # Returns [List of Dates, List of Corresponding Close Values]
       #print("All dates available:", self.finalDatesAndClose[0])
       #print("All close values:\n", self.finalDatesAndClose[1])
       finalDates = self.finalDatesAndClose[0]
       finalClose = self.finalDatesAndClose[1]
       print(len(finalDates), "unique dates:", finalDates[len(finalDates)-1], "...", finalDates[0])
       print(len(finalClose), "close values:", finalClose[len(finalClose)-1], "...", finalClose[0])
+
+      print("\nConverting list of final dates to datetime")
+      self.finalDatesAndClose2 = StockData.datetimeDates(self)
+      #print(self.finalDatesAndClose2[0][0])
+
     else:
       print("No sources have data for", self.name)
 
 def main(): # For testing purposes
   stockName = 'spy'
-  stock1 = Stock(stockName)
+  stock1 = StockData(stockName)
   print("Finding available dates and close values for", stock1.name)
-  Stock.main(stock1)
+  StockData.main(stock1)
 
 if __name__ == "__main__":
   main()
