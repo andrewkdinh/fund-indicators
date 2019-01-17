@@ -36,35 +36,51 @@ class Return:
         firstLastDates.append(lastDate)
         return firstLastDates
 
+    def getFirstLastDates2(self, stock):
+        finalDatesAndClose = StockData.returnFinalDatesAndClose(stock)
+        finalDatesAndClose2 = StockData.returnFinalDatesAndClose2(stock)
+        firstDate = self.firstLastDates[0]
+        lastDate = self.firstLastDates[1]
+        finalDates = finalDatesAndClose[0]
+
+        firstDateExists = False
+        lastDateExists = False
+        for i in range(0, len(finalDates), 1):
+            if finalDates[i] == str(firstDate):
+                firstDateExists = True
+            elif finalDates[i] == lastDate:
+                lastDateExists = True
+                i = len(finalDates)
+
+        if firstDateExists == False:
+            print("Could not find first date. Changing first date to closest date")
+            tempDate = Functions.stringToDate(firstDate) # Change to datetime
+            print('Original first date: ', tempDate)
+            #tempDate = datetime.date(2014,1,17)
+            newFirstDate = Functions.getNearest(finalDatesAndClose2[0], tempDate)
+            print('New first date: ', newFirstDate)
+            firstDate = str(newFirstDate)
+
+        if lastDateExists == False:
+            print("Could not find final date. Changing final date to closest date")
+            tempDate2 = Functions.stringToDate(lastDate) # Change to datetime
+            print('Original final date: ', tempDate2)
+            #tempDate2 = datetime.date(2014,1,17)
+            newLastDate = Functions.getNearest(finalDatesAndClose2[0], tempDate2)
+            print('New final date: ', newLastDate)
+            lastDate = str(newLastDate)
+
+        firstLastDates = []
+        firstLastDates.append(firstDate)
+        firstLastDates.append(lastDate)
+        return firstLastDates
+
     def getUnadjustedReturn(self, stock):
         finalDatesAndClose = StockData.returnFinalDatesAndClose(stock)
         finalDatesAndClose2 = StockData.returnFinalDatesAndClose2(stock)
         firstDate = self.firstLastDates[0]
         lastDate = self.firstLastDates[1]
         finalDates = finalDatesAndClose[0]
-        finalClose = finalDatesAndClose[1]
-
-        firstClose = 0
-        for i in range(0, len(finalDates), 1):
-            if finalDates[i] == firstDate:
-                firstClose = finalClose[i]
-            elif finalDates[i] == lastDate:
-                lastClose = finalClose[i]
-                i = len(finalDates)
-
-        if firstClose == 0:
-            print("Could not find first date. Changing first date to closest date")
-            temp = Functions.stringToDate(firstDate) # Change to datetime
-            print('Original first date: ', temp)
-            newFirstDate = Functions.getNearest(finalDatesAndClose2[0], temp)
-            print('New first date: ', newFirstDate)
-
-            for i in range(0, len(finalDates), 1):
-                if finalDates[i] == str(newFirstDate):
-                    firstClose = finalClose[i]
-
-        print(firstClose)
-        print(lastClose)
 
 #    def getBeta(self, timeFrame):
 
@@ -85,6 +101,10 @@ class Return:
         #print(self.timeFrame)
         self.firstLastDates = Return.getFirstLastDates(self, stock)
         print('Dates: ', self.firstLastDates)
+
+        print('\nMaking sure dates are within list...')
+        self.firstLastDates = Return.getFirstLastDates2(self, stock)
+        print('New dates: ', self.firstLastDates)
 
         print('\nGetting unadjusted return')
         Return.getUnadjustedReturn(self, stock)

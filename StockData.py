@@ -29,8 +29,7 @@ Daily Requests = 20,000
 Symbol Requests = 500
 '''
 
-import requests, json, socket
-import importlib.util, sys # To check whether a package is installed
+import requests, json
 from datetime import datetime
 
 class StockData:
@@ -446,8 +445,8 @@ class StockData:
       finalClose = finalDatesAndClose[1]
       finalDates = []
 
+      from Functions import Functions
       for i in range(0, len(finalDatesStrings), 1):
-          from Functions import Functions
           temp = Functions.stringToDate(finalDatesStrings[i])
           finalDates.append(temp)
       #print(finalDates)
@@ -457,6 +456,7 @@ class StockData:
       return(finalDatesAndClose2)
 
   def is_connected():
+    import socket # To check internet connection
     try:
         # connect to the host -- tells us if the host is actually
         # reachable
@@ -468,6 +468,7 @@ class StockData:
     return False
 
   def main(self):
+    import importlib.util, sys # To check whether a package is installed
 
     packages = ['requests']
     for i in range(0, len(packages), 1):
