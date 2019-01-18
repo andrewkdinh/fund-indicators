@@ -55,19 +55,19 @@ class Return:
         if firstDateExists == False:
             print("Could not find first date. Changing first date to closest date")
             tempDate = Functions.stringToDate(firstDate) # Change to datetime
-            print('Original first date: ', tempDate)
+            print('Original first date:', tempDate)
             #tempDate = datetime.date(2014,1,17)
             newFirstDate = Functions.getNearest(finalDatesAndClose2[0], tempDate)
-            print('New first date: ', newFirstDate)
+            print('New first date:', newFirstDate)
             firstDate = str(newFirstDate)
 
         if lastDateExists == False:
             print("Could not find final date. Changing final date to closest date")
             tempDate2 = Functions.stringToDate(lastDate) # Change to datetime
-            print('Original final date: ', tempDate2)
+            print('Original final date:', tempDate2)
             #tempDate2 = datetime.date(2014,1,17)
             newLastDate = Functions.getNearest(finalDatesAndClose2[0], tempDate2)
-            print('New final date: ', newLastDate)
+            print('New final date:', newLastDate)
             lastDate = str(newLastDate)
 
         firstLastDates = []
@@ -81,6 +81,19 @@ class Return:
         firstDate = self.firstLastDates[0]
         lastDate = self.firstLastDates[1]
         finalDates = finalDatesAndClose[0]
+        finalClose = finalDatesAndClose[1]
+
+        for i in range(0, len(finalDates), 1):
+            if finalDates[i] == str(firstDate):
+                firstClose = finalClose[i]
+            elif finalDates[i] == lastDate:
+                lastClose = finalClose[i]
+                i = len(finalDates)
+
+        print('Close values:', firstClose, '...', lastClose)
+        unadjustedReturn = float(lastClose/firstClose)
+        unadjustedReturn = unadjustedReturn * 100
+        return unadjustedReturn
 
 #    def getBeta(self, timeFrame):
 
@@ -89,6 +102,8 @@ class Return:
     def main(self, stock):
         # Find date to start from and last date
         self.timeFrame = []
+        self.listOfReturn = []
+
         print("\nPlease enter a time frame in years: ", end='')
         #timeFrameYear = int(input())
         timeFrameYear = 5
@@ -107,7 +122,9 @@ class Return:
         print('New dates: ', self.firstLastDates)
 
         print('\nGetting unadjusted return')
-        Return.getUnadjustedReturn(self, stock)
+        unadjustedReturn = Return.getUnadjustedReturn(self, stock)
+        self.listOfReturn.append(unadjustedReturn)
+        print(self.listOfReturn[0], '%')
 
 def main():
     stockName = 'spy'
