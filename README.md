@@ -11,4 +11,6 @@ or
 
 `$ pip install requests`
 
+`$ pip install numpy`
+
 Created by Andrew Dinh from Dr. TJ Owens Gilroy Early College Academy
