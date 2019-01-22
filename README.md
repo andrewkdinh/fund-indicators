@@ -10,5 +10,6 @@ This project is written in Python and will examine market capitalization, persis
 or
 
 `$ pip install requests`
+`$ pip install numpy`
 
 Created by Andrew Dinh from Dr. TJ Owens Gilroy Early College Academy
