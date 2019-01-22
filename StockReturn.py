@@ -107,11 +107,12 @@ class Return:
         print("\nPlease enter a time frame in years: ", end='')
         #timeFrameYear = int(input())
         timeFrameYear = 5
+        print(timeFrameYear)
         self.timeFrame.append(timeFrameYear)
         print("Please enter a time frame in months (30 days): ", end='')
         #timeFrameMonth = int(input())
         timeFrameMonth = 0
-        print('')
+        print(timeFrameMonth)
         self.timeFrame.append(timeFrameMonth)
         #print(self.timeFrame)
         self.firstLastDates = Return.getFirstLastDates(self, stock)
@@ -124,7 +125,8 @@ class Return:
         print('\nGetting unadjusted return')
         unadjustedReturn = Return.getUnadjustedReturn(self, stock)
         self.listOfReturn.append(unadjustedReturn)
-        print(self.listOfReturn[0], '%')
+        print(self.listOfReturn[0])
+        print(self.listOfReturn[0]/timeFrameYear, '%')
 
 def main():
     stockName = 'spy'

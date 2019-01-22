@@ -141,9 +141,17 @@ class StockData:
 
   def getAV(self):
     listAV = []
-    url = ''.join(('https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=', self.name, '&apikey=', apiAV))
+    #url = ''.join(('https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=', self.name, '&apikey=', apiAV))
     # https://www.alphavantage.co/query?function=TIME_SERIES_MONTHLY&symbol=MSFT&apikey=demo
+
+    #url = ''.join(('https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=', self.name, '&outputsize=full&apikey=', apiAV))
+    # https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=MSFT&outputsize=full&apikey=demo
+
+    url = ''.join(('https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=', self.name, '&outputsize=full&apikey=', apiAV))
+    # https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=MSFT&outputsize=full&apikey=demo
+
     print("\nSending request to:", url)
+    print("(This will take a while)")
     f = requests.get(url)
     json_data = f.text
     loaded_json = json.loads(json_data)
@@ -156,9 +164,9 @@ class StockData:
       return 'Not available'
 
     #print(loaded_json['Monthly Time Series'])
-    monthlyTimeSeries = loaded_json['Monthly Time Series']
+    dailyTimeSeries = loaded_json['Time Series (Daily)']
     #print(monthlyTimeSeries)
-    listOfDates = list(monthlyTimeSeries)
+    listOfDates = list(dailyTimeSeries)
     #print(listOfDates)
 
     firstDate = listOfDates[-1]
@@ -179,8 +187,9 @@ class StockData:
     values = []
     for i in range(0, len(listOfDates), 1):
       temp = listOfDates[i]
-      loaded_json2 = monthlyTimeSeries[temp]
-      value = loaded_json2['4. close']
+      loaded_json2 = dailyTimeSeries[temp]
+      #value = loaded_json2['4. close']
+      value = loaded_json2['5. adjusted close']
       values.append(value)
     listAV.append(values)
     #print(listOfDates[0])
@@ -485,6 +494,8 @@ class StockData:
     listOfFirstLastDates = []
     self.allLists = []
 
+    print('\nNOTE: Only IEX and Alpha Vantage support adjusted returns')
+
     # IEX
     print("\nIEX")
     listIEX = StockData.getIEX(self)
@@ -504,6 +515,7 @@ class StockData:
     # COMMENTED OUT FOR NOW B/C LIMITED
     '''
     print("\nTiingo")
+    print("NOTE: Tiingo does not return adjusted returns!!")
     listTiingo = StockData.getTiingo(self)
     #print(listTiingo)
     if listTiingo != 'Not available':
@@ -515,7 +527,7 @@ class StockData:
     #print(listOfFirstLastDates)
     if (len(self.allLists) > 0):
       print("\n")
-      print(len(self.allLists), "available sources for", self.name)
+      print(len(self.allLists), "available source(s) for", self.name)
       self.absFirstLastDates = StockData.getFirstLastDate(self, listOfFirstLastDates)
       print("\nThe absolute first date with close values is:", self.absFirstLastDates[0])
       print("The absolute last date with close values is:", self.absFirstLastDates[1])

@@ -4,3 +4,5 @@ __pycache__/
 quickstart.py
 creds.json
 test/
+.vscode/
+listGoogle.py
