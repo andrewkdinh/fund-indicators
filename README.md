@@ -13,4 +13,8 @@ or
 
 `$ pip install numpy`
 
+To begin, run
+
+`$ python(3) main.py`
+
 Created by Andrew Dinh from Dr. TJ Owens Gilroy Early College Academy
