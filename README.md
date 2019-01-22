@@ -13,8 +13,12 @@ or
 
 `$ pip install numpy`
 
+
 To begin, run
 
 `$ python(3) main.py`
+
+Some ticker values to try:
+SPY, VFINX, AAPL, GOOGL
 
 Created by Andrew Dinh from Dr. TJ Owens Gilroy Early College Academy
