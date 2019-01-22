@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 quickstart.py
 creds.json
+test/
+.vscode/
+listGoogle.py
