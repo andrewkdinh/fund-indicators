@@ -4,7 +4,7 @@
 # Description:
 '''
 Calculates return for each stock from the lists from ExpenseRatio.py
-listOfReturn = [Unadjsted Return, Sharpe Ratio, Sortino Ratio, Treynor Ratio, Jensen's Alpha]
+listOfReturn = [Unadjusted Return, Sharpe Ratio, Sortino Ratio, Treynor Ratio, Jensen's Alpha]
 '''
 
 from StockData import StockData
@@ -14,7 +14,7 @@ from Functions import Functions
 class Return:
     def __init__(self, newListOfReturn = [], newTimeFrame = [], newBeta = 0, newStandardDeviation = 0, newNegativeStandardDeviation = 0, newMarketReturn = 0, newSize = 0, newSizeOfNeg = 0, newFirstLastDates = [], newAllLists = [], newAbsFirstLastDates = ''):
         self.listOfReturn = newListOfReturn
-        self.timeFrame = newTimeFrame # [year, months (30 days)]
+        self.timeFrame = newTimeFrame # [years, months (30 days)]
         self.beta = newBeta
         self.standardDeviation = newStandardDeviation
         self.negativeStandardDeviation = newNegativeStandardDeviation
@@ -22,6 +22,12 @@ class Return:
         self.size = newSize
         self.sizeOfNeg = newSizeOfNeg
         self.firstLastDates = newFirstLastDates
+
+    def returnTimeFrame(self):
+        return self.timeFrame
+
+    def setTimeFrame(self, newTimeFrame):
+        self.timeFrame = newTimeFrame
 
     def getFirstLastDates(self, stock):
         firstLastDates = []
@@ -77,7 +83,6 @@ class Return:
 
     def getUnadjustedReturn(self, stock):
         finalDatesAndClose = StockData.returnFinalDatesAndClose(stock)
-        finalDatesAndClose2 = StockData.returnFinalDatesAndClose2(stock)
         firstDate = self.firstLastDates[0]
         lastDate = self.firstLastDates[1]
         finalDates = finalDatesAndClose[0]
@@ -91,15 +96,34 @@ class Return:
                 i = len(finalDates)
 
         print('Close values:', firstClose, '...', lastClose)
-        unadjustedReturn = float(lastClose/firstClose)
-        unadjustedReturn = unadjustedReturn * 100
+        fullUnadjustedReturn = float(lastClose/firstClose)
+        unadjustedReturn = fullUnadjustedReturn**(1/(self.timeFrame[0]+(self.timeFrame[1])*.1))
         return unadjustedReturn
 
-#    def getBeta(self, timeFrame):
+    def getBeta(self):
+        # Can be calculated with correlation
+        import numpy as np
+
+        finalDatesAndClose = StockData.returnFinalDatesAndClose(stock)
+        firstDate = self.firstLastDates[0]
+        lastDate = self.firstLastDates[1]
+        finalDates = finalDatesAndClose[0]
+        finalClose = finalDatesAndClose[1]
+
+        for i in range(0, len(finalDates), 1):
+            if finalDates[i] == str(firstDate):
+                firstClose = finalClose[i]
+55ggbh
+        #list1 = 
+        list2 = [1,2,4,1]
+
+        print(numpy.corrcoef(list1, list2)[0, 1])
 
 #    def getStandardDeviation(self, timeFrame):
 
-    def main(self, stock):
+    def mainBenchmark(self, stock):
+        print('Beginning StockReturn.py')
+
         # Find date to start from and last date
         self.timeFrame = []
         self.listOfReturn = []
@@ -125,8 +149,31 @@ class Return:
         print('\nGetting unadjusted return')
         unadjustedReturn = Return.getUnadjustedReturn(self, stock)
         self.listOfReturn.append(unadjustedReturn)
-        print(self.listOfReturn[0])
-        print(self.listOfReturn[0]/timeFrameYear, '%')
+        print('Average annual return for the past', self.timeFrame[0], 'years and', self.timeFrame[1], 'months: ', end='')
+        print((self.listOfReturn[0]-1)*100, '%', sep='')
+
+
+    def main(self, stock):
+        print('Beginning StockReturn.py')
+
+        # Find date to start from and last date
+        self.listOfReturn = []
+
+        self.firstLastDates = Return.getFirstLastDates(self, stock)
+        print('Dates: ', self.firstLastDates)
+
+        print('\nMaking sure dates are within list...')
+        self.firstLastDates = Return.getFirstLastDates2(self, stock)
+        print('New dates: ', self.firstLastDates)
+
+        print('\nGetting unadjusted return')
+        unadjustedReturn = Return.getUnadjustedReturn(self, stock)
+        self.listOfReturn.append(unadjustedReturn)
+        print('Average annual return for the past', self.timeFrame[0], 'years and', self.timeFrame[1], 'months: ', end='')
+        print((self.listOfReturn[0]-1)*100, '%', sep='')
+
+        #print('\nGetting beta')
+        #beta = Return.getBeta(self, stock)
 
 def main():
     stockName = 'spy'
@@ -135,6 +182,8 @@ def main():
     StockData.main(stock1)
 
     stock1Return = Return()
+    Return.setTimeFrame(stock1Return, [5, 0])
+
     Return.main(stock1Return, stock1)
 
 if __name__ == "__main__":

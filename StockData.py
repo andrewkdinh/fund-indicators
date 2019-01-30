@@ -477,6 +477,8 @@ class StockData:
     return False
 
   def main(self):
+    print('Beginning StockData.py')
+    
     import importlib.util, sys # To check whether a package is installed
 
     packages = ['requests']
@@ -495,6 +497,7 @@ class StockData:
     self.allLists = []
 
     print('\nNOTE: Only IEX and Alpha Vantage support adjusted returns')
+    print('NOTE: Only Alpha Vantage and Tiingo support mutual fund data')
 
     # IEX
     print("\nIEX")
@@ -526,7 +529,7 @@ class StockData:
     #print(self.allLists)
     #print(listOfFirstLastDates)
     if (len(self.allLists) > 0):
-      print("\n")
+      print("\n", end='')
       print(len(self.allLists), "available source(s) for", self.name)
       self.absFirstLastDates = StockData.getFirstLastDate(self, listOfFirstLastDates)
       print("\nThe absolute first date with close values is:", self.absFirstLastDates[0])
@@ -541,7 +544,7 @@ class StockData:
       print(len(finalDates), "unique dates:", finalDates[len(finalDates)-1], "...", finalDates[0])
       print(len(finalClose), "close values:", finalClose[len(finalClose)-1], "...", finalClose[0])
 
-      print("\nConverting list of final dates to datetime")
+      print("\nConverting list of final dates to datetime\n")
       self.finalDatesAndClose2 = StockData.datetimeDates(self)
       #print(self.finalDatesAndClose2[0][0])
 
