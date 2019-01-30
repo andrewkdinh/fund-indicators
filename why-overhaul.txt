@@ -1,0 +1,29 @@
+1/30/2019
+I decided to do an overhaul of this project for a few reasons.
+
+1. I realized I don't need two separate classes (StockData & StockReturn). 
+I can just make one class (Stock) that holds all the values.
+
+2. I realized how it was much easier to work with datetime than with strings. 
+In the overhaul, I'll be working with datetime as much as I can, only switching to strings when it's absolutely necessary.
+
+3. I've found other API's/sources for stock data like pandas-datareader (https://pandas-datareader.readthedocs.io/)
+I'll likely be sticking with the API's I have right now (Alpha Vantage, Tiingo, & IEX), but will keep these sources in mind in the case I need them.
+In particular, I may be integrating the fix-yahoo-finance (https://pypi.org/project/fix-yahoo-finance/) module because Yahoo supports mutual funds.
+
+4. My code is getting more and more cluttered the further I go into this project.
+Therefore, it would be to my advantage to clean it up before I go onto the next step of analyzing the data. 
+I'll be focusing on having more functions (def) so it is more readable. 
+I would also like for my project to be easily adaptable into other projects should I have the need. 
+Fixing my code should help me do this.
+
+5. As of now, I have not been calculating return and close values as I probably should have. 
+I'll have to do some more research into this, but this is what has transpired up to this moment:
+  As of now, I have been gathering data from multiple sources, averaging the close values for the same dates, and calculating return based on the final list.
+  However, I realize that adjusted close values can vary greatly, even with the same API. 
+  For example, the same date from Alpha Vantage's monthly-adjusted close values is slightly different from their daily-adjusted close values. 
+  Instead of this current process, I'll consult with a mentor to figure out if it is advantageous to:
+    1. Stick to one source
+    2. Use as many sources I can and only average the very final results 
+      (Ex: use the results of unadjusted return from Alpha Vantage and results from Yahoo to average the two)
+    3. Choose a few sources and stick to just those.
