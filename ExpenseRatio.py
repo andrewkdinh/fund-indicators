@@ -12,17 +12,19 @@ import numpy
 from urllib.request import urlopen
 import re
 
+
 class ExpenseRatio:
     def __init__(self):
 
 
-def main(): # For testing purposes
+def main():  # For testing purposes
     '''
-	a = [1,2,3]
-	b = [2,4,6]
-	c = numpy.corrcoef(a, b)[0, 1]
-	print(c)
+        a = [1,2,3]
+        b = [2,4,6]
+        c = numpy.corrcoef(a, b)[0, 1]
+        print(c)
     '''
 
+
 if __name__ == "__main__":
-  	main()
+    main()

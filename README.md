@@ -16,6 +16,4 @@ To begin, run
 Some ticker values to try:
 SPY, VFINX, AAPL, GOOGL
 
-`$ pip install numpy`
-
 Created by Andrew Dinh from Dr. TJ Owens Gilroy Early College Academy
