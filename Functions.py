@@ -1,6 +1,9 @@
 # Python file for general functions
+
+
 def getNearest(items, pivot):
     return min(items, key=lambda x: abs(x - pivot))
+
 
 def stringToDate(date):
     from datetime import datetime
@@ -8,14 +11,7 @@ def stringToDate(date):
     #datetime_object = datetime.strptime('Jun 1 2005  1:33PM', '%b %d %Y %I:%M%p')
     datetime_object = datetime.strptime(date, '%Y-%m-%d').date()
     return(datetime_object)
-    '''
-    dateSplit = date.split('-')
-    year = int(dateSplit[0])
-    month = int(dateSplit[1])
-    day = int(dateSplit[2])
-    datetime_object = datetime.date(year, month, day)
-    '''
-    return datetime_object
+
 
 def removeExtraDatesAndCloseValues(list1, list2):
     # Returns the two lists but with the extra dates and corresponding close values removed
@@ -38,6 +34,25 @@ def removeExtraDatesAndCloseValues(list1, list2):
     returnList.append(newList2)
     return returnList
 
+
+def stringIsInt(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+def strintIsFloat(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+def fromCache(r):
+    import requests_cache
+    if r.from_cache == True:
+        print('(Response taken from cache)')
 
 def main():
     exit()

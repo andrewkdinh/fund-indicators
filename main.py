@@ -1,12 +1,24 @@
-# main.py
+# https://github.com/andrewkdinh/fund-indicators
+# Determine indicators of overperforming mutual funds
 # Andrew Dinh
 # Python 3.6.7
 
+# Required
 import requests
 import json
 import datetime
-import numpy
 import Functions
+import numpy as np
+
+# Required for linear regression
+import matplotlib.pyplot as plt
+import sys
+
+# Optional
+import requests_cache
+# https://requests-cache.readthedocs.io/en/lates/user_guide.html
+requests_cache.install_cache(
+    'requests_cache', backend='sqlite', expire_after=43200)  # 12 hours
 
 # API Keys
 apiAV = 'O42ICUV58EIZZQMU'
@@ -14,12 +26,14 @@ apiAV = 'O42ICUV58EIZZQMU'
 apiBarchart = 'f40b136c6dc4451f9136bb53b9e70ffa'
 apiTiingo = '2e72b53f2ab4f5f4724c5c1e4d5d4ac0af3f7ca8'
 apiTradier = 'n26IFFpkOFRVsB5SNTVNXicE5MPD'
+apiQuandl = 'KUh3U3hxke9tCimjhWEF'
+# apiIntrinio = 'OmNmN2E5YWI1YzYxN2Q4NzEzZDhhOTgwN2E2NWRhOWNl'
 # If you're going to take these API keys and abuse it, you should really reconsider your life priorities
 
 '''
 API Keys:
     Alpha Vantage API Key: O42ICUV58EIZZQMU
-    Barchart API Key: a17fab99a1c21cd6f847e2f82b592838 
+    Barchart API Key: a17fab99a1c21cd6f847e2f82b592838
         Possible other one? f40b136c6dc4451f9136bb53b9e70ffa
         150 getHistory queries per day
     Tiingo API Key: 2e72b53f2ab4f5f4724c5c1e4d5d4ac0af3f7ca8
@@ -28,20 +42,35 @@ API Keys:
         Hourly Requests = 500
         Daily Requests = 20,000
         Symbol Requests = 500
+    Quandl API Key: KUh3U3hxke9tCimjhWEF
+    Intrinio API Key: OmNmN2E5YWI1YzYxN2Q4NzEzZDhhOTgwN2E2NWRhOWNl
 
-    Mutual funds:
+    Mutual funds?
     Yes: Alpha Vantage, Tiingo
     No: IEX, Barchart
+
+    Adjusted?
+    Yes: Alpha Vantage, IEX
+    No: Tiingo
 '''
 
 
 class Stock:
 
     # GLOBAL VARIABLES
-    timeFrame = []
+    timeFrame = 0
+    riskFreeRate = 0
+    indicator = ''
+
+    # BENCHMARK VALUES
     benchmarkDates = []
     benchmarkCloseValues = []
-    benchmarkUnadjustedReturn = 0
+    benchmarkAverageAnnualReturn = 0
+    benchmarkStandardDeviation = 0
+
+    # INDICATOR VALUES
+    indicatorCorrelation = []
+    indicatorRegression = []
 
     def __init__(self):
         # BASIC DATA
@@ -54,24 +83,20 @@ class Stock:
         self.closeValuesMatchBenchmark = []
 
         # CALCULATED RETURN
-        self.unadjustedReturn = 0
-        self.sortino = 0
+        self.averageAnnualReturn = 0
+        self.annualReturn = []
         self.sharpe = 0
+        self.sortino = 0
         self.treynor = 0
         self.alpha = 0
         self.beta = 0
         self.standardDeviation = 0
-        self.negStandardDeviation = 0
+        self.downsideDeviation = 0
+        self.kurtosis = 0
+        self.skewness = 0  # Not sure if I need this
+        self.linearRegression = []  # for y=mx+b, this list has [m,b]
 
-        # INDICATOR VALUES
-        self.expenseRatio = 0
-        self.assetSize = 0
-        self.turnover = 0
-        self.persistence = []  # [Years, Months]
-
-        # CALCULATED VALUES FOR INDICATORS
-        self.correlation = 0
-        self.regression = 0
+        self.indicatorValue = ''
 
     def setName(self, newName):
         self.name = newName
@@ -89,9 +114,10 @@ class Stock:
         print('IEX')
         url = ''.join(
             ('https://api.iextrading.com/1.0/stock/', self.name, '/chart/5y'))
-        #link = "https://api.iextrading.com/1.0/stock/spy/chart/5y"
+        # link = "https://api.iextrading.com/1.0/stock/spy/chart/5y"
         print("\nSending request to:", url)
         f = requests.get(url)
+        Functions.fromCache(f)
         json_data = f.text
         if json_data == 'Unknown symbol' or f.status_code == 404:
             print("IEX not available")
@@ -129,8 +155,8 @@ class Stock:
         # https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=MSFT&outputsize=full&apikey=demo
 
         print("\nSending request to:", url)
-        print("(This will take a while)")
         f = requests.get(url)
+        Functions.fromCache(f)
         json_data = f.text
         loaded_json = json.loads(json_data)
 
@@ -148,9 +174,9 @@ class Stock:
         for i in range(0, len(listOfDates), 1):
             temp = listOfDates[i]
             loaded_json2 = dailyTimeSeries[temp]
-            #value = loaded_json2['4. close']
+            # value = loaded_json2['4. close']
             value = loaded_json2['5. adjusted close']
-            values.append(value)
+            values.append(float(value))
         # listAV.append(values)
         listAV.append(list(reversed(values)))
         print(len(listAV[1]), "close values")
@@ -167,8 +193,9 @@ class Stock:
         url = ''.join(('https://api.tiingo.com/tiingo/daily/', self.name))
         print("\nSending request to:", url)
         f = requests.get(url, headers=headers)
+        Functions.fromCache(f)
         loaded_json = f.json()
-        if len(loaded_json) == 1 or f.status_code == 404:
+        if len(loaded_json) == 1 or f.status_code == 404 or loaded_json['startDate'] == None:
             print("Tiingo not available")
             return 'Not available'
 
@@ -187,6 +214,7 @@ class Stock:
         # https://api.tiingo.com/tiingo/daily/<ticker>/prices?startDate=2012-1-1&endDate=2016-1-1
         print("\nSending request to:", url2, '\n')
         requestResponse2 = requests.get(url2, headers=headers)
+        Functions.fromCache(requestResponse2)
         loaded_json2 = requestResponse2.json()
         for i in range(0, len(loaded_json2)-1, 1):
             line = loaded_json2[i]
@@ -210,12 +238,12 @@ class Stock:
     def datesAndClose(self):
         print('\n', Stock.getName(self), sep='')
 
-        # sourceList = ['AV', 'Tiingo', 'IEX'] # Change back to this later
-        sourceList = ['Tiingo', 'IEX', 'AV']
+        sourceList = ['AV', 'IEX', 'Tiingo']
+        # sourceList = ['IEX', 'Tiingo', 'AV']
         # Use each source until you get a value
         for j in range(0, len(sourceList), 1):
             source = sourceList[j]
-            print('\nSource being used: ', source)
+            print('\nSource being used:', source)
 
             if source == 'AV':
                 datesAndCloseList = Stock.AV(self)
@@ -227,11 +255,11 @@ class Stock:
             if datesAndCloseList != 'Not available':
                 break
             else:
-                #print(sourceList[j], 'does not have data available')
                 if j == len(sourceList)-1:
                     print('\nNo sources have data for', self.name)
-                    return
-                    # FIGURE OUT WHAT TO DO HERE
+                    print('Removing', self.name,
+                          'from list of stocks to ensure compatibility later')
+                    return 'Not available'
 
         # Convert dates to datetime
         allDates = datesAndCloseList[0]
@@ -241,7 +269,7 @@ class Stock:
 
         return datesAndCloseList
 
-    def datesAndClose2(self):
+    def datesAndCloseFitTimeFrame(self):
         print('Shortening list to fit time frame')
         # Have to do this because if I just make dates = self.allDates & closeValues = self.allCloseValues, then deleting from dates & closeValues also deletes it from self.allDates & self.allCloseValues (I'm not sure why)
         dates = []
@@ -251,9 +279,8 @@ class Stock:
             closeValues.append(self.allCloseValues[i])
 
         firstDate = datetime.datetime.now().date() - datetime.timedelta(
-            days=self.timeFrame[0]*365) - datetime.timedelta(days=self.timeFrame[1]*30)
-        print('\n', self.timeFrame[0], ' years and ',
-              self.timeFrame[1], ' months ago: ', firstDate, sep='')
+            days=self.timeFrame*365)
+        print('\n', self.timeFrame, ' years ago: ', firstDate, sep='')
         closestDate = Functions.getNearest(dates, firstDate)
         if closestDate != firstDate:
             print('Closest date available for', self.name, ':', closestDate)
@@ -278,21 +305,199 @@ class Stock:
 
         return datesAndCloseList2
 
-    def unadjustedReturn(self):
-        unadjustedReturn = (float(self.closeValues[len(
-            self.closeValues)-1]/self.closeValues[0])**(1/(self.timeFrame[0]+(self.timeFrame[1])*.1)))-1
-        print('Annual unadjusted return:', unadjustedReturn)
-        return unadjustedReturn
+    def calcAverageAnnualReturn(self):  # pylint: disable=E0202
+        # averageAnnualReturn = (float(self.closeValues[len(self.closeValues)-1]/self.closeValues[0])**(1/(self.timeFrame)))-1
+        # averageAnnualReturn = averageAnnualReturn * 100
+        averageAnnualReturn = sum(self.annualReturn)/self.timeFrame
+        print('Average annual return:', averageAnnualReturn)
+        return averageAnnualReturn
 
-    def beta(self, benchmarkMatchDatesAndCloseValues):
-        beta = numpy.corrcoef(self.closeValuesMatchBenchmark,
-                              benchmarkMatchDatesAndCloseValues[1])[0, 1]
+    def calcAnnualReturn(self):
+        annualReturn = []
+
+        # Calculate annual return in order from oldest to newest
+        annualReturn = []
+        for i in range(0, self.timeFrame, 1):
+            firstDate = datetime.datetime.now().date() - datetime.timedelta(
+                days=(self.timeFrame-i)*365)
+            secondDate = datetime.datetime.now().date() - datetime.timedelta(
+                days=(self.timeFrame-i-1)*365)
+
+            # Find closest dates to firstDate and lastDate
+            firstDate = Functions.getNearest(self.dates, firstDate)
+            secondDate = Functions.getNearest(self.dates, secondDate)
+
+            if firstDate == secondDate:
+                print('Closest date is', firstDate,
+                      'which is after the given time frame.')
+                return 'Not available'
+
+            # Get corresponding close values and calculate annual return
+            for i in range(0, len(self.dates), 1):
+                if self.dates[i] == firstDate:
+                    firstClose = self.closeValues[i]
+                elif self.dates[i] == secondDate:
+                    secondClose = self.closeValues[i]
+                    break
+
+            annualReturnTemp = (secondClose/firstClose)-1
+            annualReturnTemp = annualReturnTemp * 100
+            annualReturn.append(annualReturnTemp)
+
+        print('Annual return over the past',
+              self.timeFrame, 'years:', annualReturn)
+        return annualReturn
+
+    def calcCorrelation(self, closeList):
+        correlation = np.corrcoef(
+            self.closeValuesMatchBenchmark, closeList)[0, 1]
+        print('Correlation with benchmark:', correlation)
+        return correlation
+
+    def calcStandardDeviation(self):
+        numberOfValues = self.timeFrame
+        mean = self.averageAnnualReturn
+        standardDeviation = (
+            (sum((self.annualReturn[x]-mean)**2 for x in range(0, numberOfValues, 1)))/(numberOfValues-1))**(1/2)
+        print('Standard Deviation:', standardDeviation)
+        return standardDeviation
+
+    def calcDownsideDeviation(self):
+        numberOfValues = self.timeFrame
+        targetReturn = self.averageAnnualReturn
+        downsideDeviation = (
+            (sum(min(0, (self.annualReturn[x]-targetReturn))**2 for x in range(0, numberOfValues, 1)))/(numberOfValues-1))**(1/2)
+        print('Downside Deviation:', downsideDeviation)
+        return downsideDeviation
+
+    def calcKurtosis(self):
+        numberOfValues = self.timeFrame
+        mean = self.averageAnnualReturn
+        kurtosis = (sum((self.annualReturn[x]-mean)**4 for x in range(
+            0, numberOfValues, 1)))/((numberOfValues-1)*(self.standardDeviation ** 4))
+        print('Kurtosis:', kurtosis)
+        return kurtosis
+
+    def calcSkewness(self):
+        numberOfValues = self.timeFrame
+        mean = self.averageAnnualReturn
+        skewness = (sum((self.annualReturn[x]-mean)**3 for x in range(
+            0, numberOfValues, 1)))/((numberOfValues-1)*(self.standardDeviation ** 3))
+        print('Skewness:', skewness)
+        return skewness
+
+    def calcBeta(self):
+        beta = self.correlation * \
+            (self.standardDeviation/Stock.benchmarkStandardDeviation)
         print('Beta:', beta)
         return beta
+
+    def calcAlpha(self):
+        alpha = self.averageAnnualReturn - \
+            (Stock.riskFreeRate+((Stock.benchmarkAverageAnnualReturn -
+                                  Stock.riskFreeRate) * self.beta))
+        print('Alpha:', alpha)
+        return alpha
+
+    def calcSharpe(self):
+        sharpe = (self.averageAnnualReturn - Stock.riskFreeRate) / \
+            self.standardDeviation
+        print('Sharpe Ratio:', sharpe)
+        return sharpe
+
+    def calcSortino(self):
+        sortino = (self.averageAnnualReturn - self.riskFreeRate) / \
+            self.downsideDeviation
+        print('Sortino Ratio:', sortino)
+        return sortino
+
+    def calcTreynor(self):
+        treynor = (self.averageAnnualReturn - Stock.riskFreeRate)/self.beta
+        print('Treynor Ratio:', treynor)
+        return treynor
+
+    def calcLinearRegression(self):
+        dates = self.dates
+        y = self.closeValues
+
+        # First change dates to integers (days from first date)
+        x = datesToDays(dates)
+
+        x = np.array(x)
+        y = np.array(y)
+
+        # Estimate coefficients
+        # number of observations/points
+        n = np.size(x)
+
+        # mean of x and y vector
+        m_x, m_y = np.mean(x), np.mean(y)
+
+        # calculating cross-deviation and deviation about x
+        SS_xy = np.sum(y*x) - n*m_y*m_x
+        SS_xx = np.sum(x*x) - n*m_x*m_x
+
+        # calculating regression coefficients
+        b_1 = SS_xy / SS_xx
+        b_0 = m_y - b_1*m_x
+
+        b = [b_0, b_1]
+
+        formula = ''.join(
+            ('y = ', str(round(float(b[0]), 2)), 'x + ', str(round(float(b[1]), 2))))
+        print('Linear regression formula:', formula)
+
+        # Stock.plot_regression_line(self, x, y, b)
+
+        regression = []
+        regression.append(b[0])
+        regression.append(b[1])
+        return regression
+
+    def plot_regression_line(self, x, y, b):
+        # plotting the actual points as scatter plot
+        plt.scatter(self.dates, y, color="m",
+                    marker="o", s=30)
+
+        # predicted response vector
+        y_pred = b[0] + b[1]*x
+
+        # plotting the regression line
+        plt.plot(self.dates, y_pred, color="g")
+
+        # putting labels
+        plt.title(self.name)
+        plt.xlabel('Dates')
+        plt.ylabel('Close Values')
+
+        # function to show plot
+        plt.show(block=False)
+        for i in range(3, 0, -1):
+            if i == 1:
+                sys.stdout.write('Keeping plot open for ' +
+                                 str(i) + ' second \r')
+            else:
+                sys.stdout.write('Keeping plot open for ' +
+                                 str(i) + ' seconds \r')
+            plt.pause(1)
+            sys.stdout.flush()
+        plt.close()
+
+
+def datesToDays(dates):
+    days = []
+    firstDate = dates[0]
+    days.append(0)
+    for i in range(1, len(dates), 1):
+        # Calculate days from first date to current date
+        daysDiff = (dates[i]-firstDate).days
+        days.append(daysDiff)
+    return days
 
 
 def isConnected():
     import socket  # To check internet connection
+    print('Checking internet connection')
     try:
         # connect to the host -- tells us if the host is actually reachable
         socket.create_connection(("www.andrewkdinh.com", 80))
@@ -327,17 +532,31 @@ def benchmarkInit():
     while benchmarkTicker == '':
         benchmarks = ['S&P500', 'DJIA', 'Russell 3000', 'MSCI EAFE']
         benchmarksTicker = ['SPY', 'DJIA', 'VTHR', 'EFT']
-        print('\nList of benchmarks:', benchmarks)
-
-        # benchmark = str(input('Benchmark to compare to: '))
-        benchmark = 'S&P500'
-
+        print('\nList of benchmarks:')
         for i in range(0, len(benchmarks), 1):
-            if benchmark == benchmarks[i]:
-                benchmarkTicker = benchmarksTicker[i]
+            print(str(i+1) + '. ' +
+                  benchmarks[i] + ' (' + benchmarksTicker[i] + ')')
+
+        benchmark = str(input('Please choose a benchmark from the list: '))
+        # benchmark = 'SPY' # TESTING
+
+        if Functions.stringIsInt(benchmark) == True:
+            if int(benchmark) <= len(benchmarks):
+                benchmarkInt = int(benchmark)
+                benchmark = benchmarks[benchmarkInt-1]
+                benchmarkTicker = benchmarksTicker[benchmarkInt-1]
+        else:
+            for i in range(0, len(benchmarks), 1):
+                if benchmark == benchmarks[i]:
+                    benchmarkTicker = benchmarksTicker[i]
+                    break
+                if benchmark == benchmarksTicker[i] or benchmark == benchmarksTicker[i].lower():
+                    benchmark = benchmarks[i]
+                    benchmarkTicker = benchmarksTicker[i]
+                    break
 
         if benchmarkTicker == '':
-            print('Benchmark not found. Please type in a benchmark from the list')
+            print('Benchmark not found. Please use a benchmark from the list')
 
     print(benchmark, ' (', benchmarkTicker, ')', sep='')
 
@@ -350,18 +569,31 @@ def benchmarkInit():
 def stocksInit():
     listOfStocks = []
 
-    # numberOfStocks = int(input('\nHow many stocks/mutual funds/ETFs would you like to analyze? '))
-    numberOfStocks = 1
+    isInteger = False
+    while isInteger == False:
+        temp = input('\nNumber of stocks to analyze (2 minimum): ')
+        isInteger = Functions.stringIsInt(temp)
+        if isInteger == True:
+            numberOfStocks = int(temp)
+        else:
+            print('Please type an integer')
 
-    print('\nHow many stocks/mutual funds/ETFs would you like to analyze? ', numberOfStocks)
+    # numberOfStocks = 5 # TESTING
+    # print('How many stocks would you like to analyze? ', numberOfStocks)
+
+    print('\nThis program can analyze stocks (GOOGL), mutual funds (VFINX), and ETFs (SPY)')
+    print('For simplicity, all of them will be referred to as "stock"\n')
+
+    # listOfGenericStocks = ['googl', 'aapl', 'vfinx', 'tsla', 'vthr']
 
     for i in range(0, numberOfStocks, 1):
-        print('Stock', i + 1, ': ', end='')
-        #stockName = str(input())
+        print('Stock', i + 1, end=' ')
+        stockName = str(input('ticker: '))
 
-        stockName = 'FBGRX'
-        print(stockName)
+        # stockName = listOfGenericStocks[i]
+        # print(':', stockName)
 
+        stockName = stockName.upper()
         listOfStocks.append(stockName)
         listOfStocks[i] = Stock()
         listOfStocks[i].setName(stockName)
@@ -370,49 +602,94 @@ def stocksInit():
 
 
 def timeFrameInit():
-    print('\nPlease enter the time frame in years and months (30 days)')
-    print("Years: ", end='')
-    #years = int(input())
-    years = 5
-    print(years)
-    print("Months: ", end='')
-    #months = int(input())
-    months = 0
-    print(months)
+    isInteger = False
+    while isInteger == False:
+        print(
+            '\nPlease enter the time frame in years (10 years or less recommended):', end='')
+        temp = input(' ')
+        isInteger = Functions.stringIsInt(temp)
+        if isInteger == True:
+            years = int(temp)
+        else:
+            print('Please type an integer')
 
-    timeFrame = []
-    timeFrame.append(years)
-    timeFrame.append(months)
+    # years = 5 # TESTING
+    # print('Years:', years)
+
+    timeFrame = years
     return timeFrame
 
 
 def dataMain(listOfStocks):
     print('\nGathering dates and close values')
-    for i in range(0, len(listOfStocks), 1):
+    i = 0
+    while i < len(listOfStocks):
 
         datesAndCloseList = Stock.datesAndClose(listOfStocks[i])
-        listOfStocks[i].allDates = datesAndCloseList[0]
-        listOfStocks[i].allCloseValues = datesAndCloseList[1]
+        if datesAndCloseList == 'Not available':
+            del listOfStocks[i]
+            if len(listOfStocks) == 0:
+                print('No stocks to analyze. Ending program')
+                exit()
+        else:
+            listOfStocks[i].allDates = datesAndCloseList[0]
+            listOfStocks[i].allCloseValues = datesAndCloseList[1]
 
-        # Clip list to fit time frame
-        datesAndCloseList2 = Stock.datesAndClose2(listOfStocks[i])
-        listOfStocks[i].dates = datesAndCloseList2[0]
-        listOfStocks[i].closeValues = datesAndCloseList2[1]
+            # Clip list to fit time frame
+            datesAndCloseList2 = Stock.datesAndCloseFitTimeFrame(
+                listOfStocks[i])
+            listOfStocks[i].dates = datesAndCloseList2[0]
+            listOfStocks[i].closeValues = datesAndCloseList2[1]
+
+            i += 1
+
+
+def riskFreeRate():
+    print('Quandl')
+    url = ''.join(
+        ('https://www.quandl.com/api/v3/datasets/USTREASURY/LONGTERMRATES.json?api_key=', apiQuandl))
+    # https://www.quandl.com/api/v3/datasets/USTREASURY/LONGTERMRATES.json?api_key=KUh3U3hxke9tCimjhWEF
+
+    print("\nSending request to:", url)
+    f = requests.get(url)
+    Functions.fromCache(f)
+    json_data = f.text
+    loaded_json = json.loads(json_data)
+    riskFreeRate = (loaded_json['dataset']['data'][0][1])/100
+    riskFreeRate = riskFreeRate * 100
+    riskFreeRate = round(riskFreeRate, 2)
+    print('Risk-free rate:', riskFreeRate, end='\n\n')
+
+    if f.status_code == 404:
+        print("Quandl not available")
+        print('Returning 2.50 as risk-free rate', end='\n\n')
+        # return 0.0250
+        return 2.50
+
+    return riskFreeRate
 
 
 def returnMain(benchmark, listOfStocks):
     print('\nCalculating unadjusted return, Sharpe ratio, Sortino ratio, and Treynor ratio\n')
-    print(benchmark.name)
-    benchmark.unadjustedReturn = Stock.unadjustedReturn(benchmark)
+    print('Getting risk-free rate from current 10-year treasury bill rates', end='\n\n')
+    Stock.riskFreeRate = riskFreeRate()
+    print(benchmark.name, end='\n\n')
+    benchmark.annualReturn = Stock.calcAnnualReturn(benchmark)
+    if benchmark.annualReturn == 'Not available':
+        print('Please use a lower time frame\nEnding program')
+        exit()
+    benchmark.averageAnnualReturn = Stock.calcAverageAnnualReturn(benchmark)
+    benchmark.standardDeviation = Stock.calcStandardDeviation(benchmark)
 
     # Make benchmark data global
-    # Maybe remove this later
     Stock.benchmarkDates = benchmark.dates
     Stock.benchmarkCloseValues = benchmark.closeValues
-    Stock.benchmarkUnadjustedReturn = benchmark.unadjustedReturn
+    Stock.benchmarkAverageAnnualReturn = benchmark.averageAnnualReturn
+    Stock.benchmarkStandardDeviation = benchmark.standardDeviation
 
-    for i in range(0, len(listOfStocks), 1):
-        print(listOfStocks[i].name)
+    i = 0
+    while i < len(listOfStocks):
+        print('\n' + listOfStocks[i].name, end='\n\n')
 
         # Make sure each date has a value for both the benchmark and the stock
         list1 = []
@@ -426,10 +703,241 @@ def returnMain(benchmark, listOfStocks):
         listOfStocks[i].closeValuesMatchBenchmark = temp[0][1]
         benchmarkMatchDatesAndCloseValues = temp[1]
 
-        listOfStocks[i].unadjustedReturn = Stock.unadjustedReturn(
-            listOfStocks[i])
-        listOfStocks[i].beta = Stock.beta(
-            listOfStocks[i], benchmarkMatchDatesAndCloseValues)
+        # Calculate everything for each stock
+        listOfStocks[i].annualReturn = Stock.calcAnnualReturn(listOfStocks[i])
+        if listOfStocks[i].annualReturn == 'Not available':
+            print('Removing', listOfStocks[i].name, 'from list of stocks')
+            del listOfStocks[i]
+            if len(listOfStocks) == 0:
+                print('No stocks to analyze. Ending program')
+                exit()
+        else:
+            listOfStocks[i].averageAnnualReturn = Stock.calcAverageAnnualReturn(
+                listOfStocks[i])
+            listOfStocks[i].correlation = Stock.calcCorrelation(
+                listOfStocks[i], benchmarkMatchDatesAndCloseValues[1])
+            listOfStocks[i].standardDeviation = Stock.calcStandardDeviation(
+                listOfStocks[i])
+            listOfStocks[i].downsideDeviation = Stock.calcDownsideDeviation(
+                listOfStocks[i])
+            listOfStocks[i].kurtosis = Stock.calcKurtosis(
+                listOfStocks[i])
+            listOfStocks[i].skewness = Stock.calcSkewness(
+                listOfStocks[i])
+            listOfStocks[i].beta = Stock.calcBeta(listOfStocks[i])
+            listOfStocks[i].alpha = Stock.calcAlpha(listOfStocks[i])
+            listOfStocks[i].sharpe = Stock.calcSharpe(listOfStocks[i])
+            listOfStocks[i].sortino = Stock.calcSortino(listOfStocks[i])
+            listOfStocks[i].treynor = Stock.calcTreynor(listOfStocks[i])
+            listOfStocks[i].linearRegression = Stock.calcLinearRegression(
+                listOfStocks[i])
+
+            i += 1
+
+    print('\nNumber of stocks from original list that fit time frame:',
+          len(listOfStocks))
+
+
+def indicatorInit():
+    # Runs correlation or regression study
+    indicatorFound = False
+    listOfIndicators = ['Expense Ratio',
+                        'Market Capitalization', 'Turnover', 'Persistence']
+    print('\n', end='')
+    while indicatorFound == False:
+        print('List of indicators:')
+        for i in range(0, len(listOfIndicators), 1):
+            print(str(i + 1) + '. ' + listOfIndicators[i])
+
+        indicator = str(input('Choose an indicator from the list: '))
+
+        # indicator = 'expense ratio' # TESTING
+
+        if Functions.stringIsInt(indicator) == True:
+            if int(indicator) <= 4:
+                indicator = listOfIndicators[int(indicator)-1]
+                indicatorFound = True
+        else:
+            indicatorFormats = [
+                indicator.upper(), indicator.lower(), indicator.title()]
+            for i in range(0, len(indicatorFormats), 1):
+                for j in range(0, len(listOfIndicators), 1):
+                    if listOfIndicators[j] == indicatorFormats[i]:
+                        indicator = listOfIndicators[j]
+                        indicatorFound = True
+                        break
+
+        if indicatorFound == False:
+            print('Please choose an indicator from the list')
+
+    return indicator
+
+
+def calcIndicatorCorrelation(listOfIndicatorValues, listOfReturns):
+    correlationList = []
+    for i in range(0, len(listOfReturns), 1):
+        correlation = np.corrcoef(
+            listOfIndicatorValues, listOfReturns[i])[0, 1]
+        correlationList.append(correlation)
+    return correlationList
+
+
+def calcIndicatorRegression(listOfIndicatorValues, listOfReturns):
+    regressionList = []
+    x = np.array(listOfIndicatorValues)
+    for i in range(0, len(listOfReturns), 1):
+        y = np.array(listOfReturns[i])
+
+        # Estimate coefficients
+        # number of observations/points
+        n = np.size(x)
+
+        # mean of x and y vector
+        m_x, m_y = np.mean(x), np.mean(y)
+
+        # calculating cross-deviation and deviation about x
+        SS_xy = np.sum(y*x) - n*m_y*m_x
+        SS_xx = np.sum(x*x) - n*m_x*m_x
+
+        # calculating regression coefficients
+        b_1 = SS_xy / SS_xx
+        b_0 = m_y - b_1*m_x
+
+        b = [b_0, b_1]
+
+        regression = []
+        regression.append(b[0])
+        regression.append(b[1])
+        regressionList.append(regression)
+
+        # plot_regression_line(x, y, b, i)
+
+    return regressionList
+
+
+def plot_regression_line(x, y, b, i):
+    # plotting the actual points as scatter plot
+    plt.scatter(x, y, color="m",
+                marker="o", s=30)
+
+    # predicted response vector
+    y_pred = b[0] + b[1]*x
+
+    # plotting the regression line
+    plt.plot(x, y_pred, color="g")
+
+    # putting labels
+    listOfReturnStrings = ['Average Annual Return',
+                           'Sharpe Ratio', 'Sortino Ratio', 'Treynor Ratio', 'Alpha']
+
+    plt.title(Stock.indicator + ' and ' + listOfReturnStrings[i])
+    if Stock.indicator == 'Expense Ratio':
+        plt.xlabel(Stock.indicator + ' (%)')
+    else:
+        plt.xlabel(Stock.indicator)
+
+    if i == 0:
+        plt.ylabel(listOfReturnStrings[i] + ' (%)')
+    else:
+        plt.ylabel(listOfReturnStrings[i])
+
+    # function to show plot
+    plt.show(block=False)
+    for i in range(2, 0, -1):
+        if i == 1:
+            sys.stdout.write('Keeping plot open for ' +
+                             str(i) + ' second \r')
+        else:
+            sys.stdout.write('Keeping plot open for ' +
+                             str(i) + ' seconds \r')
+        plt.pause(1)
+        sys.stdout.flush()
+    sys.stdout.write(
+        '                                                                         \r')
+    sys.stdout.flush()
+    plt.close()
+
+
+def indicatorMain(listOfStocks):
+    Stock.indicator = indicatorInit()
+    print(Stock.indicator, end='\n\n')
+
+    # indicatorValuesGenericExpenseRatio = [2.5, 4.3, 3.1, 2.6, 4.2] # TESTING
+
+    listOfStocksIndicatorValues = []
+    for i in range(0, len(listOfStocks), 1):
+        indicatorValueFound = False
+        while indicatorValueFound == False:
+            if Stock.indicator == 'Expense Ratio':
+                indicatorValue = str(
+                    input(Stock.indicator + ' for ' + listOfStocks[i].name + ' (%): '))
+            elif Stock.indicator == 'Persistence':
+                indicatorValue = str(
+                    input(Stock.indicator + ' for ' + listOfStocks[i].name + ' (years): '))
+            elif Stock.indicator == 'Turnover':
+                indicatorValue = str(input(
+                    Stock.indicator + ' for ' + listOfStocks[i].name + ' in the last ' + str(Stock.timeFrame) + ' years: '))
+            elif Stock.indicator == 'Market Capitalization':
+                indicatorValue = str(
+                    input(Stock.indicator + ' of ' + listOfStocks[i].name + ': '))
+            else:
+                print('Something is wrong. Indicator was not found. Ending program.')
+                exit()
+
+            if Functions.strintIsFloat(indicatorValue) == True:
+                listOfStocks[i].indicatorValue = float(indicatorValue)
+                indicatorValueFound = True
+            else:
+                print('Please enter a number')
+
+        # listOfStocks[i].indicatorValue = indicatorValuesGenericExpenseRatio[i] # TESTING
+        listOfStocksIndicatorValues.append(listOfStocks[i].indicatorValue)
+
+    listOfReturns = []  # A list that matches the above list with return values [[averageAnnualReturn1, aAR2, aAR3], [sharpe1, sharpe2, sharpe3], etc.]
+    tempListOfReturns = []
+    for i in range(0, len(listOfStocks), 1):
+        tempListOfReturns.append(listOfStocks[i].averageAnnualReturn)
+    listOfReturns.append(tempListOfReturns)
+    tempListOfReturns = []
+    for i in range(0, len(listOfStocks), 1):
+        tempListOfReturns.append(listOfStocks[i].sharpe)
+    listOfReturns.append(tempListOfReturns)
+    tempListOfReturns = []
+    for i in range(0, len(listOfStocks), 1):
+        tempListOfReturns.append(listOfStocks[i].sortino)
+    listOfReturns.append(tempListOfReturns)
+    tempListOfReturns = []
+    for i in range(0, len(listOfStocks), 1):
+        tempListOfReturns.append(listOfStocks[i].treynor)
+    listOfReturns.append(tempListOfReturns)
+    tempListOfReturns = []
+    for i in range(0, len(listOfStocks), 1):
+        tempListOfReturns.append(listOfStocks[i].alpha)
+    listOfReturns.append(tempListOfReturns)
+
+    # Create list of each indicator (e.g. expense ratio)
+    listOfIndicatorValues = []
+    for i in range(0, len(listOfStocks), 1):
+        listOfIndicatorValues.append(listOfStocks[i].indicatorValue)
+
+    Stock.indicatorCorrelation = calcIndicatorCorrelation(
+        listOfIndicatorValues, listOfReturns)
+
+    listOfReturnStrings = ['Average Annual Return',
+                           'Sharpe Ratio', 'Sortino Ratio', 'Treynor Ratio', 'Alpha']
+    print('\n', end='')
+    for i in range(0, len(Stock.indicatorCorrelation), 1):
+        print('Correlation with ' + Stock.indicator.lower() + ' and ' +
+              listOfReturnStrings[i].lower() + ': ' + str(Stock.indicatorCorrelation[i]))
+
+    Stock.indicatorRegression = calcIndicatorRegression(
+        listOfIndicatorValues, listOfReturns)
+    print('\n', end='')
+    for i in range(0, len(Stock.indicatorCorrelation), 1):
+        formula = ''.join(
+            ('y = ', str(round(float(Stock.indicatorRegression[i][0]), 2)), 'x + ', str(round(float(Stock.indicatorRegression[i][1]), 2))))
+        print('Linear regression equation for ' + Stock.indicator.lower() + ' and ' +
+              listOfReturnStrings[i].lower() + ': ' + formula)
 
 
 def main():
@@ -463,110 +971,11 @@ def main():
     # Calculate return for benchmark and stock(s)
     returnMain(benchmark, listOfStocks)
 
+    # Choose indicator and calculate correlation with indicator
+    indicatorMain(listOfStocks)
+
+    exit()
+
 
 if __name__ == "__main__":
     main()
-
-
-'''
-from StockData import StockData
-from StockReturn import Return
-
-listOfStocksData = []
-listOfStocksReturn = []
-# numberOfStocks = int(input("How many stocks or mutual funds would you like to analyze? ")) # CHANGE BACK LATER
-numberOfStocks = 1
-for i in range(0, numberOfStocks, 1):
-      print("Stock", i+1, ": ", end='')
-      stockName = str(input())
-      listOfStocksData.append(i)
-      listOfStocksData[i] = StockData()
-      listOfStocksData[i].setName(stockName)
-    # print(listOfStocksData[i].name)
-
-    # listOfStocksReturn.append(i)
-    # listOfStocksReturn[i] = StockReturn()
-
-
-# Decide on a benchmark
-benchmarkTicker = ''
-while benchmarkTicker == '':
-    listOfBenchmarks = ['S&P500', 'DJIA', 'Russell 3000', 'MSCI EAFE']
-    listOfBenchmarksTicker = ['SPY', 'DJIA', 'VTHR', 'EFT']
-    print('\nList of benchmarks:', listOfBenchmarks)
-    # benchmark = str(input('Benchmark to compare to: '))
-    benchmark = 'S&P500'
-
-    for i in range(0,len(listOfBenchmarks), 1):
-        if benchmark == listOfBenchmarks[i]:
-            benchmarkTicker = listOfBenchmarksTicker[i]
-            i = len(listOfBenchmarks)
-
-    if benchmarkTicker == '':
-        print('Benchmark not found. Please type in a benchmark from the list')
-
-print('\n', benchmark, ' (', benchmarkTicker, ')', sep='')
-
-benchmarkName = str(benchmark)
-benchmark = StockData()
-benchmark.setName(benchmarkName)
-StockData.main(benchmark)
-
-benchmarkReturn = Return()
-Return.mainBenchmark(benchmarkReturn, benchmark)
-
-timeFrame = Return.returnTimeFrame(benchmarkReturn)
-print('Time Frame [years, months]:', timeFrame)
-
-sumOfListLengths = 0
-for i in range(0, numberOfStocks, 1):
-      print('\n', listOfStocksData[i].name, sep='')
-      StockData.main(listOfStocksData[i])
-      # Count how many stocks are available
-      sumOfListLengths = sumOfListLengths + len(StockData.returnAllLists(listOfStocksData[i]))
-
-if sumOfListLengths == 0:
-    print("No sources have data for given stocks")
-    exit()
-
-# Find return over time using either Jensen's Alpha, Sharpe Ratio, Sortino Ratio, or Treynor Ratio
-for i in range(0, numberOfStocks, 1):
-    print('\n', listOfStocksData[i].name, sep='')
-    # StockReturn.main(listOfStocksReturn[i])
-
-
-# Runs correlation or regression study
-# print(listOfStocksData[0].name, listOfStocksData[0].absFirstLastDates, listOfStocksData[0].finalDatesAndClose)
-indicatorFound = False
-while indicatorFound == False:
-    print("1. Expense Ratio\n2. Asset Size\n3. Turnover\n4. Persistence\nWhich indicator would you like to look at? ", end='')
-
-    # indicator = str(input()) # CHANGE BACK TO THIS LATER
-    indicator = 'Expense Ratio'
-    print(indicator, end='')
-
-    indicatorFound = True
-    print('\n', end='')
-
-    if indicator == 'Expense Ratio' or indicator == '1' or indicator == 'expense ratio':
-        # from ExpenseRatio import ExpenseRatio
-        print('\nExpense Ratio')
-
-    elif indicator == 'Asset Size' or indicator == '2' or indicator == 'asset size':
-        print('\nAsset Size')
-
-    elif indicator == 'Turnover' or indicator == '3' or indicator == 'turnover':
-        print('\nTurnover')
-
-    elif indicator == 'Persistence' or indicator == '4' or indicator == 'persistence':
-        print('\nPersistence')
-
-    else:
-        indicatorFound = False
-        print('Invalid input, please enter indicator again')
-
-stockName = 'IWV'
-stock1 = Stock(stockName)
-print("Finding available dates and close values for", stock1.name)
-StockData.main(stock1)
-'''
