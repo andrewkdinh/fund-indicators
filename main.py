@@ -4,6 +4,7 @@
 # Python 3.6.7
 
 # Required
+from concurrent.futures import ThreadPoolExecutor as PoolExecutor
 import requests
 import json
 import datetime
@@ -16,9 +17,9 @@ import sys
 
 # Optional
 import requests_cache
-# https://requests-cache.readthedocs.io/en/lates/user_guide.html
 requests_cache.install_cache(
     'requests_cache', backend='sqlite', expire_after=43200)  # 12 hours
+
 
 # API Keys
 apiAV = 'O42ICUV58EIZZQMU'
@@ -119,7 +120,7 @@ class Stock:
         f = requests.get(url)
         Functions.fromCache(f)
         json_data = f.text
-        if json_data == 'Unknown symbol' or f.status_code == 404:
+        if json_data == 'Unknown symbol' or f.status_code != 200:
             print("IEX not available")
             return 'Not available'
         loaded_json = json.loads(json_data)
@@ -160,7 +161,7 @@ class Stock:
         json_data = f.text
         loaded_json = json.loads(json_data)
 
-        if len(loaded_json) == 1 or f.status_code == 404:
+        if len(loaded_json) == 1 or f.status_code != 200:
             print("Alpha Vantage not available")
             return 'Not available'
 
@@ -195,7 +196,7 @@ class Stock:
         f = requests.get(url, headers=headers)
         Functions.fromCache(f)
         loaded_json = f.json()
-        if len(loaded_json) == 1 or f.status_code == 404 or loaded_json['startDate'] == None:
+        if len(loaded_json) == 1 or f.status_code != 200 or loaded_json['startDate'] == None:
             print("Tiingo not available")
             return 'Not available'
 
@@ -497,11 +498,11 @@ def datesToDays(dates):
 
 def isConnected():
     import socket  # To check internet connection
-    print('Checking internet connection')
+    #print('Checking internet connection')
     try:
         # connect to the host -- tells us if the host is actually reachable
         socket.create_connection(("www.andrewkdinh.com", 80))
-        print('Internet connection is good!')
+        print('Internet connection is good')
         return True
     except OSError:
         # pass
@@ -524,6 +525,22 @@ def checkPackages():
                 " is not installed\nPlease type in 'pip install -r requirements.txt' to install all required packages")
             packagesInstalled = False
     return packagesInstalled
+
+
+def checkPythonVersion():
+    import platform
+    #print('Checking Python version')
+    i = platform.python_version()
+    r = i.split('.')
+    k = ''.join((r[0], '.', r[1]))
+    k = float(k)
+    if k < 3.3:
+        print('Your Python version is', i,
+              '\nIt needs to be greater than version 3.3')
+        return False
+    else:
+        print('Your Python version of', i, 'is good')
+        return True
 
 
 def benchmarkInit():
@@ -601,11 +618,45 @@ def stocksInit():
     return listOfStocks
 
 
+def asyncData(benchmark, listOfStocks):
+    # Make list of urls to send requests to
+    urlList = []
+    # Benchmark
+    url = ''.join(('https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=',
+                   benchmark.name, '&outputsize=full&apikey=', apiAV))
+    urlList.append(url)
+
+    # Stocks
+    for i in range(0, len(listOfStocks), 1):
+        # Alpha Vantage
+        url = ''.join(('https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=',
+                       listOfStocks[i].name, '&outputsize=full&apikey=', apiAV))
+        urlList.append(url)
+
+    # Risk-free rate
+    url = ''.join(
+        ('https://www.quandl.com/api/v3/datasets/USTREASURY/LONGTERMRATES.json?api_key=', apiQuandl))
+    urlList.append(url)
+
+    # Send async requests
+    print('\nSending async requests (Assuming Alpha Vantage is first choice)')
+    with PoolExecutor(max_workers=3) as executor:
+        for _ in executor.map(sendAsync, urlList):
+            pass
+
+    return
+
+
+def sendAsync(url):
+    requests.get(url)
+    return
+
+
 def timeFrameInit():
     isInteger = False
     while isInteger == False:
         print(
-            '\nPlease enter the time frame in years (10 years or less recommended):', end='')
+            '\nPlease enter the time frame in years (<10 years recommended):', end='')
         temp = input(' ')
         isInteger = Functions.stringIsInt(temp)
         if isInteger == True:
@@ -660,7 +711,7 @@ def riskFreeRate():
     riskFreeRate = round(riskFreeRate, 2)
     print('Risk-free rate:', riskFreeRate, end='\n\n')
 
-    if f.status_code == 404:
+    if f.status_code != 200:
         print("Quandl not available")
         print('Returning 2.50 as risk-free rate', end='\n\n')
         # return 0.0250
@@ -950,12 +1001,18 @@ def main():
     packagesInstalled = checkPackages()
     if not packagesInstalled:
         return
+    else:
+        print('All required packages are installed')
+
+    # Check python version is above 3.3
+    pythonVersionGood = checkPythonVersion()
+    if not pythonVersionGood:
+        return
 
     # Choose benchmark and makes it class Stock
     benchmark = benchmarkInit()
     # Add it to a list to work with other functions
-    benchmarkAsList = []
-    benchmarkAsList.append(benchmark)
+    benchmarkAsList = [benchmark]
 
     # Asks for stock(s) ticker and makes them class Stock
     listOfStocks = stocksInit()
@@ -963,6 +1020,9 @@ def main():
     # Determine time frame [Years, Months]
     timeFrame = timeFrameInit()
     Stock.timeFrame = timeFrame  # Needs to be a global variable for all stocks
+
+    # Send async request to AV for listOfStocks and benchmark
+    asyncData(benchmark, listOfStocks)
 
     # Gather data for benchmark and stock(s)
     dataMain(benchmarkAsList)

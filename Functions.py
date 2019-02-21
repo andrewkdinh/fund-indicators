@@ -42,6 +42,7 @@ def stringIsInt(s):
     except ValueError:
         return False
 
+
 def strintIsFloat(s):
     try:
         float(s)
@@ -49,10 +50,13 @@ def strintIsFloat(s):
     except ValueError:
         return False
 
+
 def fromCache(r):
     import requests_cache
     if r.from_cache == True:
         print('(Response taken from cache)')
+    return
+
 
 def main():
     exit()
