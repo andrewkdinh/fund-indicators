@@ -4,22 +4,26 @@
 # Python 3.6.7
 
 # Required
-from concurrent.futures import ThreadPoolExecutor as PoolExecutor
+from bs4 import BeautifulSoup
 import requests
 import json
 import datetime
 import Functions
 import numpy as np
+import re
+import os.path
 
 # Required for linear regression
 import matplotlib.pyplot as plt
 import sys
 
 # Optional
+from concurrent.futures import ThreadPoolExecutor as PoolExecutor
+import time
+import random
 import requests_cache
 requests_cache.install_cache(
-    'requests_cache', backend='sqlite', expire_after=43200)  # 12 hours
-
+    'cache', backend='sqlite', expire_after=43200)  # 12 hours
 
 # API Keys
 apiAV = 'O42ICUV58EIZZQMU'
@@ -59,19 +63,20 @@ API Keys:
 class Stock:
 
     # GLOBAL VARIABLES
-    timeFrame = 0
+    timeFrame = 0  # Months
     riskFreeRate = 0
     indicator = ''
 
     # BENCHMARK VALUES
     benchmarkDates = []
     benchmarkCloseValues = []
-    benchmarkAverageAnnualReturn = 0
+    benchmarkAverageMonthlyReturn = 0
     benchmarkStandardDeviation = 0
 
     # INDICATOR VALUES
     indicatorCorrelation = []
     indicatorRegression = []
+    persTimeFrame = 0
 
     def __init__(self):
         # BASIC DATA
@@ -84,8 +89,8 @@ class Stock:
         self.closeValuesMatchBenchmark = []
 
         # CALCULATED RETURN
-        self.averageAnnualReturn = 0
-        self.annualReturn = []
+        self.averageMonthlyReturn = 0
+        self.monthlyReturn = []
         self.sharpe = 0
         self.sortino = 0
         self.treynor = 0
@@ -161,7 +166,7 @@ class Stock:
         json_data = f.text
         loaded_json = json.loads(json_data)
 
-        if len(loaded_json) == 1 or f.status_code != 200:
+        if len(loaded_json) == 1 or f.status_code != 200 or len(loaded_json) == 0:
             print("Alpha Vantage not available")
             return 'Not available'
 
@@ -268,6 +273,15 @@ class Stock:
             allDates[j] = Functions.stringToDate(allDates[j])
         datesAndCloseList[0] = allDates
 
+        # Determine if close value list has value of zero
+        # AKA https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=RGN&outputsize=full&apikey=O42ICUV58EIZZQMU
+        for i in datesAndCloseList[1]:
+            if i == 0:
+                print('Found close value of 0. This is likely something like ticker RGN (Daily Time Series with Splits and Dividend Events)')
+                print('Removing', self.name,
+                      'from list of stocks to ensure compability later')
+                return 'Not available'
+
         return datesAndCloseList
 
     def datesAndCloseFitTimeFrame(self):
@@ -280,8 +294,8 @@ class Stock:
             closeValues.append(self.allCloseValues[i])
 
         firstDate = datetime.datetime.now().date() - datetime.timedelta(
-            days=self.timeFrame*365)
-        print('\n', self.timeFrame, ' years ago: ', firstDate, sep='')
+            days=self.timeFrame*30)
+        print('\n', self.timeFrame, ' months ago: ', firstDate, sep='')
         closestDate = Functions.getNearest(dates, firstDate)
         if closestDate != firstDate:
             print('Closest date available for', self.name, ':', closestDate)
@@ -306,23 +320,23 @@ class Stock:
 
         return datesAndCloseList2
 
-    def calcAverageAnnualReturn(self):  # pylint: disable=E0202
-        # averageAnnualReturn = (float(self.closeValues[len(self.closeValues)-1]/self.closeValues[0])**(1/(self.timeFrame)))-1
-        # averageAnnualReturn = averageAnnualReturn * 100
-        averageAnnualReturn = sum(self.annualReturn)/self.timeFrame
-        print('Average annual return:', averageAnnualReturn)
-        return averageAnnualReturn
+    def calcAverageMonthlyReturn(self):  # pylint: disable=E0202
+        # averageMonthlyReturn = (float(self.closeValues[len(self.closeValues)-1]/self.closeValues[0])**(1/(self.timeFrame)))-1
+        # averageMonthlyReturn = averageMonthlyReturn * 100
+        averageMonthlyReturn = sum(self.monthlyReturn)/self.timeFrame
+        print('Average monthly return:', averageMonthlyReturn)
+        return averageMonthlyReturn
 
-    def calcAnnualReturn(self):
-        annualReturn = []
+    def calcMonthlyReturn(self):
+        monthlyReturn = []
 
-        # Calculate annual return in order from oldest to newest
-        annualReturn = []
+        # Calculate monthly return in order from oldest to newest
+        monthlyReturn = []
         for i in range(0, self.timeFrame, 1):
             firstDate = datetime.datetime.now().date() - datetime.timedelta(
-                days=(self.timeFrame-i)*365)
+                days=(self.timeFrame-i)*30)
             secondDate = datetime.datetime.now().date() - datetime.timedelta(
-                days=(self.timeFrame-i-1)*365)
+                days=(self.timeFrame-i-1)*30)
 
             # Find closest dates to firstDate and lastDate
             firstDate = Functions.getNearest(self.dates, firstDate)
@@ -333,7 +347,7 @@ class Stock:
                       'which is after the given time frame.')
                 return 'Not available'
 
-            # Get corresponding close values and calculate annual return
+            # Get corresponding close values and calculate monthly return
             for i in range(0, len(self.dates), 1):
                 if self.dates[i] == firstDate:
                     firstClose = self.closeValues[i]
@@ -341,13 +355,12 @@ class Stock:
                     secondClose = self.closeValues[i]
                     break
 
-            annualReturnTemp = (secondClose/firstClose)-1
-            annualReturnTemp = annualReturnTemp * 100
-            annualReturn.append(annualReturnTemp)
+            monthlyReturnTemp = (secondClose/firstClose)-1
+            monthlyReturnTemp = monthlyReturnTemp * 100
+            monthlyReturn.append(monthlyReturnTemp)
 
-        print('Annual return over the past',
-              self.timeFrame, 'years:', annualReturn)
-        return annualReturn
+        # print('Monthly return over the past', self.timeFrame, 'months:', monthlyReturn)
+        return monthlyReturn
 
     def calcCorrelation(self, closeList):
         correlation = np.corrcoef(
@@ -357,32 +370,32 @@ class Stock:
 
     def calcStandardDeviation(self):
         numberOfValues = self.timeFrame
-        mean = self.averageAnnualReturn
+        mean = self.averageMonthlyReturn
         standardDeviation = (
-            (sum((self.annualReturn[x]-mean)**2 for x in range(0, numberOfValues, 1)))/(numberOfValues-1))**(1/2)
+            (sum((self.monthlyReturn[x]-mean)**2 for x in range(0, numberOfValues, 1)))/(numberOfValues-1))**(1/2)
         print('Standard Deviation:', standardDeviation)
         return standardDeviation
 
     def calcDownsideDeviation(self):
         numberOfValues = self.timeFrame
-        targetReturn = self.averageAnnualReturn
+        targetReturn = self.averageMonthlyReturn
         downsideDeviation = (
-            (sum(min(0, (self.annualReturn[x]-targetReturn))**2 for x in range(0, numberOfValues, 1)))/(numberOfValues-1))**(1/2)
+            (sum(min(0, (self.monthlyReturn[x]-targetReturn))**2 for x in range(0, numberOfValues, 1)))/(numberOfValues-1))**(1/2)
         print('Downside Deviation:', downsideDeviation)
         return downsideDeviation
 
     def calcKurtosis(self):
         numberOfValues = self.timeFrame
-        mean = self.averageAnnualReturn
-        kurtosis = (sum((self.annualReturn[x]-mean)**4 for x in range(
+        mean = self.averageMonthlyReturn
+        kurtosis = (sum((self.monthlyReturn[x]-mean)**4 for x in range(
             0, numberOfValues, 1)))/((numberOfValues-1)*(self.standardDeviation ** 4))
         print('Kurtosis:', kurtosis)
         return kurtosis
 
     def calcSkewness(self):
         numberOfValues = self.timeFrame
-        mean = self.averageAnnualReturn
-        skewness = (sum((self.annualReturn[x]-mean)**3 for x in range(
+        mean = self.averageMonthlyReturn
+        skewness = (sum((self.monthlyReturn[x]-mean)**3 for x in range(
             0, numberOfValues, 1)))/((numberOfValues-1)*(self.standardDeviation ** 3))
         print('Skewness:', skewness)
         return skewness
@@ -394,26 +407,26 @@ class Stock:
         return beta
 
     def calcAlpha(self):
-        alpha = self.averageAnnualReturn - \
-            (Stock.riskFreeRate+((Stock.benchmarkAverageAnnualReturn -
+        alpha = self.averageMonthlyReturn - \
+            (Stock.riskFreeRate+((Stock.benchmarkAverageMonthlyReturn -
                                   Stock.riskFreeRate) * self.beta))
         print('Alpha:', alpha)
         return alpha
 
     def calcSharpe(self):
-        sharpe = (self.averageAnnualReturn - Stock.riskFreeRate) / \
+        sharpe = (self.averageMonthlyReturn - Stock.riskFreeRate) / \
             self.standardDeviation
         print('Sharpe Ratio:', sharpe)
         return sharpe
 
     def calcSortino(self):
-        sortino = (self.averageAnnualReturn - self.riskFreeRate) / \
+        sortino = (self.averageMonthlyReturn - self.riskFreeRate) / \
             self.downsideDeviation
         print('Sortino Ratio:', sortino)
         return sortino
 
     def calcTreynor(self):
-        treynor = (self.averageAnnualReturn - Stock.riskFreeRate)/self.beta
+        treynor = (self.averageMonthlyReturn - Stock.riskFreeRate)/self.beta
         print('Treynor Ratio:', treynor)
         return treynor
 
@@ -484,6 +497,210 @@ class Stock:
             sys.stdout.flush()
         plt.close()
 
+    def scrapeYahooFinance(self):
+        # Determine if ETF, Mutual fund, or stock
+        print('Determining if Yahoo Finance has data for', self.name, end=": ")
+        url = ''.join(('https://finance.yahoo.com/quote/',
+                       self.name, '?p=', self.name))
+        if requests.get(url).history:
+            print('No')
+            return 'Not available'
+        else:
+            print('Yes')
+
+        stockType = ''
+        url2 = ''.join(('https://finance.yahoo.com/lookup?s=', self.name))
+        print('Sending request to:', url2)
+        raw_html = requests.get(url2).text
+
+        soup2 = BeautifulSoup(raw_html, 'html.parser')
+        # Type (Stock, ETF, Mutual Fund)
+        r = soup2.find_all(
+            'td', attrs={'class': 'data-col4 Ta(start) Pstart(20px) Miw(30px)'})
+        t = soup2.find_all('a', attrs={'class': 'Fw(b)'})  # Name and class
+        z = soup2.find_all('td', attrs={
+                           'class': 'data-col1 Ta(start) Pstart(10px) Miw(80px)'})  # Name of stock
+        listNames = []
+        for i in t:
+            if len(i.text.strip()) < 6:
+                listNames.append(i.text.strip())
+        for i in range(0, len(listNames), 1):
+            if listNames[i] == self.name:
+                break
+        r = r[i].text.strip()
+        z = z[i].text.strip()
+        print('Name:', z)
+
+        if r == 'ETF':
+            stockType = 'ETF'
+        elif r == 'Stocks':
+            stockType = 'Stock'
+        elif r == 'Mutual Fund':
+            stockType = 'Fund'
+        else:
+            print('Could not determine fund type')
+            return 'Not available'
+        print('Type:', stockType)
+
+        if Stock.indicator == 'Expense Ratio':
+            if stockType == 'Stock':
+                print(
+                    self.name, 'is a stock, and therefore does not have an expense ratio')
+                return 'Not available'
+
+            url = ''.join(('https://finance.yahoo.com/quote/',
+                           self.name, '?p=', self.name))
+            # https://finance.yahoo.com/quote/SPY?p=SPY
+            print('Sending request to:', url)
+            raw_html = requests.get(url).text
+            soup = BeautifulSoup(raw_html, 'html.parser')
+
+            r = soup.find_all('span', attrs={'class': 'Trsdu(0.3s)'})
+            if r == []:
+                print('Something went wrong with scraping expense ratio')
+                return('Not available')
+
+            if stockType == 'ETF':
+                for i in range(len(r)-1, 0, -1):
+                    s = r[i].text.strip()
+                    if s[-1] == '%':
+                        break
+            elif stockType == 'Fund':
+                count = 0  # Second in set
+                for i in range(0, len(r)-1, 1):
+                    s = r[i].text.strip()
+                    if s[-1] == '%' and count == 0:
+                        count += 1
+                    elif s[-1] == '%' and count == 1:
+                        break
+
+            if s[-1] == '%':
+                expenseRatio = float(s.replace('%', ''))
+            else:
+                print('Something went wrong with scraping expense ratio')
+                return 'Not available'
+            print(str(expenseRatio) + '%')
+            return expenseRatio
+
+        elif Stock.indicator == 'Market Capitalization':
+            url = ''.join(('https://finance.yahoo.com/quote/',
+                           self.name, '?p=', self.name))
+            # https://finance.yahoo.com/quote/GOOGL?p=GOOGL
+            raw_html = requests.get(url).text
+            soup = BeautifulSoup(raw_html, 'html.parser')
+            r = soup.find_all(
+                'span', attrs={'class': 'Trsdu(0.3s)'})
+            if r == []:
+                print('Something went wrong with scraping market capitalization')
+                return 'Not available'
+            marketCap = 0
+            for t in r:
+                s = t.text.strip()
+                if s[-1] == 'B':
+                    print(s, end='')
+                    s = s.replace('B', '')
+                    marketCap = float(s) * 1000000000  # 1 billion
+                    break
+                elif s[-1] == 'M':
+                    print(s, end='')
+                    s = s.replace('M', '')
+                    marketCap = float(s) * 1000000  # 1 million
+                    break
+                elif s[-1] == 'K':
+                    print(s, end='')
+                    s = s.replace('K', '')
+                    marketCap = float(s) * 1000  # 1 thousand
+                    break
+            if marketCap == 0:
+                print('\nSomething went wrong with scraping market capitalization')
+                return 'Not available'
+            marketCap = int(marketCap)
+            print(' =', marketCap)
+            return marketCap
+
+        elif Stock.indicator == 'Turnover':
+            if stockType == 'Stock':
+                print(self.name, 'is a stock, and therefore does not have turnover')
+                return 'Not available'
+
+            if stockType == 'Fund':
+                url = ''.join(('https://finance.yahoo.com/quote/',
+                               self.name, '?p=', self.name))
+                # https://finance.yahoo.com/quote/SPY?p=SPY
+                print('Sending request to', url)
+                raw_html = requests.get(url).text
+                soup = BeautifulSoup(raw_html, 'html.parser')
+
+                r = soup.find_all(
+                    'span', attrs={'class': 'Trsdu(0.3s)'})
+                if r == []:
+                    print('Something went wrong without scraping turnover')
+                    return 'Not available'
+                turnover = 0
+                for i in range(len(r)-1, 0, -1):
+                    s = r[i].text.strip()
+                    if s[-1] == '%':
+                        turnover = float(s.replace('%', ''))
+                        break
+            if stockType == 'ETF':
+                url = ''.join(('https://finance.yahoo.com/quote/',
+                               self.name, '/profile?p=', self.name))
+                # https://finance.yahoo.com/quote/SPY/profile?p=SPY
+                print('Sending request to', url)
+                raw_html = requests.get(url).text
+                soup = BeautifulSoup(raw_html, 'html.parser')
+
+                r = soup.find_all(
+                    'span', attrs={'class': 'W(20%) D(b) Fl(start) Ta(e)'})
+                if r == []:
+                    print('Something went wrong without scraping turnover')
+                    return 'Not available'
+                turnover = 0
+                for i in range(len(r)-1, 0, -1):
+                    s = r[i].text.strip()
+                    if s[-1] == '%':
+                        turnover = float(s.replace('%', ''))
+                        break
+
+            if turnover == 0:
+                print('Something went wrong with scraping turnover')
+                return 'Not available'
+            print(str(turnover) + '%')
+            return turnover
+
+    def indicatorManual(self):
+        indicatorValueFound = False
+        while indicatorValueFound == False:
+            if Stock.indicator == 'Expense Ratio':
+                indicatorValue = str(
+                    input(Stock.indicator + ' for ' + self.name + ' (%): '))
+            elif Stock.indicator == 'Persistence':
+                indicatorValue = str(
+                    input(Stock.indicator + ' for ' + self.name + ' (years): '))
+            elif Stock.indicator == 'Turnover':
+                indicatorValue = str(input(
+                    Stock.indicator + ' for ' + self.name + ' in the last ' + str(Stock.timeFrame) + ' years: '))
+            elif Stock.indicator == 'Market Capitalization':
+                indicatorValue = str(
+                    input(Stock.indicator + ' of ' + self.name + ': '))
+            else:
+                print('Something is wrong. Indicator was not found. Ending program.')
+                exit()
+
+            if Functions.strintIsFloat(indicatorValue) == True:
+                indicatorValueFound = True
+                return float(indicatorValue)
+            else:
+                print('Please enter a number')
+
+    def calcPersistence(self):
+        persistenceFirst = (sum(self.monthlyReturn[i] for i in range(
+            0, Stock.persTimeFrame, 1))) / Stock.persTimeFrame
+        persistenceSecond = self.averageMonthlyReturn
+        persistence = persistenceSecond-persistenceFirst
+        print('Change in average monthly return:', persistence)
+        return persistence
+
 
 def datesToDays(dates):
     days = []
@@ -496,69 +713,22 @@ def datesToDays(dates):
     return days
 
 
-def isConnected():
-    import socket  # To check internet connection
-    #print('Checking internet connection')
-    try:
-        # connect to the host -- tells us if the host is actually reachable
-        socket.create_connection(("www.andrewkdinh.com", 80))
-        print('Internet connection is good')
-        return True
-    except OSError:
-        # pass
-        print("No internet connection!")
-    return False
-
-
-def checkPackages():
-    import importlib.util
-    import sys
-
-    packagesInstalled = True
-    packages = ['requests', 'numpy']
-    for i in range(0, len(packages), 1):
-        package_name = packages[i]
-        spec = importlib.util.find_spec(package_name)
-        if spec is None:
-            print(
-                package_name +
-                " is not installed\nPlease type in 'pip install -r requirements.txt' to install all required packages")
-            packagesInstalled = False
-    return packagesInstalled
-
-
-def checkPythonVersion():
-    import platform
-    #print('Checking Python version')
-    i = platform.python_version()
-    r = i.split('.')
-    k = ''.join((r[0], '.', r[1]))
-    k = float(k)
-    if k < 3.3:
-        print('Your Python version is', i,
-              '\nIt needs to be greater than version 3.3')
-        return False
-    else:
-        print('Your Python version of', i, 'is good')
-        return True
-
-
 def benchmarkInit():
     # Treat benchmark like stock
     benchmarkTicker = ''
+    benchmarks = ['S&P500', 'DJIA', 'Russell 3000', 'MSCI EAFE']
+    benchmarksTicker = ['SPY', 'DJIA', 'VTHR', 'EFT']
+    print('\nList of benchmarks:')
+    for i in range(0, len(benchmarks), 1):
+        print(str(i+1) + '. ' +
+              benchmarks[i] + ' (' + benchmarksTicker[i] + ')')
     while benchmarkTicker == '':
-        benchmarks = ['S&P500', 'DJIA', 'Russell 3000', 'MSCI EAFE']
-        benchmarksTicker = ['SPY', 'DJIA', 'VTHR', 'EFT']
-        print('\nList of benchmarks:')
-        for i in range(0, len(benchmarks), 1):
-            print(str(i+1) + '. ' +
-                  benchmarks[i] + ' (' + benchmarksTicker[i] + ')')
 
         benchmark = str(input('Please choose a benchmark from the list: '))
         # benchmark = 'SPY' # TESTING
 
         if Functions.stringIsInt(benchmark) == True:
-            if int(benchmark) <= len(benchmarks):
+            if int(benchmark) <= len(benchmarks) and int(benchmark) > 0:
                 benchmarkInt = int(benchmark)
                 benchmark = benchmarks[benchmarkInt-1]
                 benchmarkTicker = benchmarksTicker[benchmarkInt-1]
@@ -586,34 +756,182 @@ def benchmarkInit():
 def stocksInit():
     listOfStocks = []
 
-    isInteger = False
-    while isInteger == False:
-        temp = input('\nNumber of stocks to analyze (2 minimum): ')
-        isInteger = Functions.stringIsInt(temp)
-        if isInteger == True:
-            numberOfStocks = int(temp)
-        else:
-            print('Please type an integer')
-
-    # numberOfStocks = 5 # TESTING
-    # print('How many stocks would you like to analyze? ', numberOfStocks)
-
     print('\nThis program can analyze stocks (GOOGL), mutual funds (VFINX), and ETFs (SPY)')
-    print('For simplicity, all of them will be referred to as "stock"\n')
+    print('For simplicity, all of them will be referred to as "stock"')
 
-    # listOfGenericStocks = ['googl', 'aapl', 'vfinx', 'tsla', 'vthr']
+    found = False
+    while found == False:
+        print('\nMethods:')
+        method = 0
+        methods = ['Read from a file', 'Enter manually',
+                   'U.S. News popular funds (~35)', 'Kiplinger top-performing funds (50)', 'TheStreet top-rated mutual funds (20)']
+        for i in range(0, len(methods), 1):
+            print(str(i+1) + '. ' + methods[i])
+        while method == 0 or method > len(methods):
+            method = str(input('Which method? '))
+            if Functions.stringIsInt(method) == True:
+                method = int(method)
+                if method == 0 or method > len(methods):
+                    print('Please choose a valid method')
+            else:
+                method = 0
+                print('Please choose a number')
+        print('')
 
-    for i in range(0, numberOfStocks, 1):
-        print('Stock', i + 1, end=' ')
-        stockName = str(input('ticker: '))
+        if method == 1:
+            defaultFiles = ['.gitignore', 'LICENSE', 'main.py', 'Functions.py',
+                            'README.md', 'requirements.txt', 'cache.sqlite', '_test_runner.py']  # Added by repl.it for whatever reason
+            stocksFound = False
+            print('Files in current directory (not including default files): ')
+            listOfFilesTemp = [f for f in os.listdir() if os.path.isfile(f)]
+            listOfFiles = []
+            for files in listOfFilesTemp:
+                if files[0] != '.' and any(x in files for x in defaultFiles) != True:
+                    listOfFiles.append(files)
+            for i in range(0, len(listOfFiles), 1):
+                if listOfFiles[i][0] != '.':
+                    print(str(i+1) + '. ' + listOfFiles[i])
+            while stocksFound == False:
+                fileName = str(input('What is the file number/name? '))
+                if Functions.stringIsInt(fileName) == True:
+                    if int(fileName) < len(listOfFiles)+1 and int(fileName) > 0:
+                        fileName = listOfFiles[int(fileName)-1]
+                        print(fileName)
+                if Functions.fileExists(fileName) == True:
+                    listOfStocks = []
+                    file = open(fileName, 'r')
+                    n = file.read()
+                    file.close()
+                    s = re.findall(r'[^,;\s]+', n)
+                    for i in s:
+                        if str(i) != '' and Functions.hasNumbers(str(i)) == False:
+                            listOfStocks.append(str(i).upper())
+                    stocksFound = True
+                else:
+                    print('File not found')
+            for i in range(0, len(listOfStocks), 1):
+                stockName = listOfStocks[i].upper()
+                listOfStocks[i] = Stock()
+                listOfStocks[i].setName(stockName)
 
-        # stockName = listOfGenericStocks[i]
-        # print(':', stockName)
+            for k in listOfStocks:
+                print(k.name, end=' ')
+            print('\n' + str(len(listOfStocks)) + ' stocks total')
 
-        stockName = stockName.upper()
-        listOfStocks.append(stockName)
-        listOfStocks[i] = Stock()
-        listOfStocks[i].setName(stockName)
+        elif method == 2:
+            isInteger = False
+            while isInteger == False:
+                temp = input('\nNumber of stocks to analyze (2 minimum): ')
+                isInteger = Functions.stringIsInt(temp)
+                if isInteger == True:
+                    if int(temp) >= 2:
+                        numberOfStocks = int(temp)
+                    else:
+                        print('Please type a number greater than or equal to 2')
+                        isInteger = False
+                else:
+                    print('Please type an integer')
+
+            i = 0
+            while i < numberOfStocks:
+                print('Stock', i + 1, end=' ')
+                stockName = str(input('ticker: '))
+
+                if stockName != '' and Functions.hasNumbers(stockName) == False:
+                    stockName = stockName.upper()
+                    listOfStocks.append(stockName)
+                    listOfStocks[i] = Stock()
+                    listOfStocks[i].setName(stockName)
+                    i += 1
+                else:
+                    print('Invalid ticker')
+
+        elif method == 3:
+            listOfStocks = []
+            url = 'https://money.usnews.com/funds/mutual-funds/most-popular'
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36'}
+            print('Sending request to', url)
+            f = requests.get(url, headers=headers)
+            Functions.fromCache(f)
+            raw_html = f.text
+            soup = BeautifulSoup(raw_html, 'html.parser')
+
+            file = open('usnews-stocks.txt', 'w')
+            r = soup.find_all(
+                'span', attrs={'class': 'text-smaller text-muted'})
+            for k in r:
+                print(k.text.strip(), end=' ')
+                listOfStocks.append(k.text.strip())
+                file.write(str(k.text.strip()) + '\n')
+            file.close()
+
+            for i in range(0, len(listOfStocks), 1):
+                stockName = listOfStocks[i].upper()
+                listOfStocks[i] = Stock()
+                listOfStocks[i].setName(stockName)
+
+            print('\n' + str(len(listOfStocks)) + ' mutual funds total')
+
+        elif method == 4:
+            listOfStocks = []
+            url = 'https://www.kiplinger.com/tool/investing/T041-S001-top-performing-mutual-funds/index.php'
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
+            print('Sending request to', url)
+            f = requests.get(url, headers=headers)
+            Functions.fromCache(f)
+            raw_html = f.text
+            soup = BeautifulSoup(raw_html, 'html.parser')
+
+            file = open('kiplinger-stocks.txt', 'w')
+            r = soup.find_all('a', attrs={'style': 'font-weight:700;'})
+            for k in r:
+                print(k.text.strip(), end=' ')
+                listOfStocks.append(k.text.strip())
+                file.write(str(k.text.strip()) + '\n')
+            file.close()
+
+            for i in range(0, len(listOfStocks), 1):
+                stockName = listOfStocks[i].upper()
+                listOfStocks[i] = Stock()
+                listOfStocks[i].setName(stockName)
+
+            print('\n' + str(len(listOfStocks)) + ' mutual funds total')
+
+        elif method == 5:
+            listOfStocks = []
+            url = 'https://www.thestreet.com/topic/21421/top-rated-mutual-funds.html'
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
+            print('Sending request to', url)
+            f = requests.get(url, headers=headers)
+            Functions.fromCache(f)
+            raw_html = f.text
+            soup = BeautifulSoup(raw_html, 'html.parser')
+
+            file = open('thestreet-stocks.txt', 'w')
+            r = soup.find_all('a')
+            for k in r:
+                if len(k.text.strip()) == 5:
+                    n = re.findall(r'^/quote/.*\.html', k['href'])
+                    if len(n) != 0:
+                        print(k.text.strip(), end=' ')
+                        listOfStocks.append(k.text.strip())
+                        file.write(str(k.text.strip()) + '\n')
+            file.close()
+
+            for i in range(0, len(listOfStocks), 1):
+                stockName = listOfStocks[i].upper()
+                listOfStocks[i] = Stock()
+                listOfStocks[i].setName(stockName)
+
+            print('\n' + str(len(listOfStocks)) + ' mutual funds total')
+
+        if len(listOfStocks) < 2:
+            print('Please choose another method')
+        else:
+            found = True
 
     return listOfStocks
 
@@ -638,6 +956,16 @@ def asyncData(benchmark, listOfStocks):
         ('https://www.quandl.com/api/v3/datasets/USTREASURY/LONGTERMRATES.json?api_key=', apiQuandl))
     urlList.append(url)
 
+    # Yahoo Finance
+    for i in range(0, len(listOfStocks), 1):
+        url = ''.join(('https://finance.yahoo.com/quote/',
+                       listOfStocks[i].name, '?p=', listOfStocks[i].name))
+        urlList.append(url)
+    for i in range(0, len(listOfStocks), 1):
+        url = ''.join(
+            ('https://finance.yahoo.com/lookup?s=', listOfStocks[i].name))
+        urlList.append(url)
+
     # Send async requests
     print('\nSending async requests (Assuming Alpha Vantage is first choice)')
     with PoolExecutor(max_workers=3) as executor:
@@ -648,6 +976,8 @@ def asyncData(benchmark, listOfStocks):
 
 
 def sendAsync(url):
+    time.sleep(random.randrange(0, 2))
+    print('Sending request to', url)
     requests.get(url)
     return
 
@@ -656,18 +986,19 @@ def timeFrameInit():
     isInteger = False
     while isInteger == False:
         print(
-            '\nPlease enter the time frame in years (<10 years recommended):', end='')
+            '\nPlease enter the time frame in months (<60 months recommended):', end='')
         temp = input(' ')
         isInteger = Functions.stringIsInt(temp)
         if isInteger == True:
-            years = int(temp)
+            if int(temp) > 1:
+                months = int(temp)
+            else:
+                print('Please enter a number greater than 1')
+                isInteger = False
         else:
             print('Please type an integer')
 
-    # years = 5 # TESTING
-    # print('Years:', years)
-
-    timeFrame = years
+    timeFrame = months
     return timeFrame
 
 
@@ -725,17 +1056,17 @@ def returnMain(benchmark, listOfStocks):
     print('Getting risk-free rate from current 10-year treasury bill rates', end='\n\n')
     Stock.riskFreeRate = riskFreeRate()
     print(benchmark.name, end='\n\n')
-    benchmark.annualReturn = Stock.calcAnnualReturn(benchmark)
-    if benchmark.annualReturn == 'Not available':
+    benchmark.monthlyReturn = Stock.calcMonthlyReturn(benchmark)
+    if benchmark.monthlyReturn == 'Not available':
         print('Please use a lower time frame\nEnding program')
         exit()
-    benchmark.averageAnnualReturn = Stock.calcAverageAnnualReturn(benchmark)
+    benchmark.averageMonthlyReturn = Stock.calcAverageMonthlyReturn(benchmark)
     benchmark.standardDeviation = Stock.calcStandardDeviation(benchmark)
 
     # Make benchmark data global
     Stock.benchmarkDates = benchmark.dates
     Stock.benchmarkCloseValues = benchmark.closeValues
-    Stock.benchmarkAverageAnnualReturn = benchmark.averageAnnualReturn
+    Stock.benchmarkAverageMonthlyReturn = benchmark.averageMonthlyReturn
     Stock.benchmarkStandardDeviation = benchmark.standardDeviation
 
     i = 0
@@ -755,15 +1086,16 @@ def returnMain(benchmark, listOfStocks):
         benchmarkMatchDatesAndCloseValues = temp[1]
 
         # Calculate everything for each stock
-        listOfStocks[i].annualReturn = Stock.calcAnnualReturn(listOfStocks[i])
-        if listOfStocks[i].annualReturn == 'Not available':
+        listOfStocks[i].monthlyReturn = Stock.calcMonthlyReturn(
+            listOfStocks[i])
+        if listOfStocks[i].monthlyReturn == 'Not available':
             print('Removing', listOfStocks[i].name, 'from list of stocks')
             del listOfStocks[i]
             if len(listOfStocks) == 0:
-                print('No stocks to analyze. Ending program')
+                print('No stocks fit time frame. Ending program')
                 exit()
         else:
-            listOfStocks[i].averageAnnualReturn = Stock.calcAverageAnnualReturn(
+            listOfStocks[i].averageMonthlyReturn = Stock.calcAverageMonthlyReturn(
                 listOfStocks[i])
             listOfStocks[i].correlation = Stock.calcCorrelation(
                 listOfStocks[i], benchmarkMatchDatesAndCloseValues[1])
@@ -787,6 +1119,9 @@ def returnMain(benchmark, listOfStocks):
 
     print('\nNumber of stocks from original list that fit time frame:',
           len(listOfStocks))
+    if len(listOfStocks) < 2:
+        print('Cannot proceed to the next step. Exiting program.')
+        exit()
 
 
 def indicatorInit():
@@ -795,17 +1130,16 @@ def indicatorInit():
     listOfIndicators = ['Expense Ratio',
                         'Market Capitalization', 'Turnover', 'Persistence']
     print('\n', end='')
+    print('List of indicators:')
+    for i in range(0, len(listOfIndicators), 1):
+        print(str(i + 1) + '. ' + listOfIndicators[i])
     while indicatorFound == False:
-        print('List of indicators:')
-        for i in range(0, len(listOfIndicators), 1):
-            print(str(i + 1) + '. ' + listOfIndicators[i])
-
         indicator = str(input('Choose an indicator from the list: '))
 
         # indicator = 'expense ratio' # TESTING
 
         if Functions.stringIsInt(indicator) == True:
-            if int(indicator) <= 4:
+            if int(indicator) <= 4 and int(indicator) > 0:
                 indicator = listOfIndicators[int(indicator)-1]
                 indicatorFound = True
         else:
@@ -819,7 +1153,7 @@ def indicatorInit():
                         break
 
         if indicatorFound == False:
-            print('Please choose an indicator from the list')
+            print('Please choose an indicator from the list\n')
 
     return indicator
 
@@ -878,12 +1212,14 @@ def plot_regression_line(x, y, b, i):
     plt.plot(x, y_pred, color="g")
 
     # putting labels
-    listOfReturnStrings = ['Average Annual Return',
+    listOfReturnStrings = ['Average Monthly Return',
                            'Sharpe Ratio', 'Sortino Ratio', 'Treynor Ratio', 'Alpha']
 
     plt.title(Stock.indicator + ' and ' + listOfReturnStrings[i])
-    if Stock.indicator == 'Expense Ratio':
+    if Stock.indicator == 'Expense Ratio' or Stock.indicator == 'Turnover':
         plt.xlabel(Stock.indicator + ' (%)')
+    elif Stock.indicator == 'Persistence':
+        plt.xlabel(Stock.indicator + ' (Difference in average monthly return)')
     else:
         plt.xlabel(Stock.indicator)
 
@@ -894,7 +1230,7 @@ def plot_regression_line(x, y, b, i):
 
     # function to show plot
     plt.show(block=False)
-    for i in range(2, 0, -1):
+    for i in range(3, 0, -1):
         if i == 1:
             sys.stdout.write('Keeping plot open for ' +
                              str(i) + ' second \r')
@@ -909,45 +1245,50 @@ def plot_regression_line(x, y, b, i):
     plt.close()
 
 
-def indicatorMain(listOfStocks):
-    Stock.indicator = indicatorInit()
-    print(Stock.indicator, end='\n\n')
+def persistenceTimeFrame():
+    print('\nTime frame you chose was', Stock.timeFrame, 'months')
+    persTimeFrameFound = False
+    while persTimeFrameFound == False:
+        persistenceTimeFrame = str(
+            input('Please choose how many months to measure persistence: '))
+        if Functions.stringIsInt(persistenceTimeFrame) == True:
+            if int(persistenceTimeFrame) > 0 and int(persistenceTimeFrame) < Stock.timeFrame - 1:
+                persistenceTimeFrame = int(persistenceTimeFrame)
+                persTimeFrameFound = True
+            else:
+                print('Please choose a number between 0 and',
+                      Stock.timeFrame, end='\n')
+        else:
+            print('Please choose an integer between 0 and',
+                  Stock.timeFrame, end='\n')
 
-    # indicatorValuesGenericExpenseRatio = [2.5, 4.3, 3.1, 2.6, 4.2] # TESTING
+    return persistenceTimeFrame
+
+
+def indicatorMain(listOfStocks):
+    print('\n' + str(Stock.indicator) + '\n')
 
     listOfStocksIndicatorValues = []
     for i in range(0, len(listOfStocks), 1):
-        indicatorValueFound = False
-        while indicatorValueFound == False:
-            if Stock.indicator == 'Expense Ratio':
-                indicatorValue = str(
-                    input(Stock.indicator + ' for ' + listOfStocks[i].name + ' (%): '))
-            elif Stock.indicator == 'Persistence':
-                indicatorValue = str(
-                    input(Stock.indicator + ' for ' + listOfStocks[i].name + ' (years): '))
-            elif Stock.indicator == 'Turnover':
-                indicatorValue = str(input(
-                    Stock.indicator + ' for ' + listOfStocks[i].name + ' in the last ' + str(Stock.timeFrame) + ' years: '))
-            elif Stock.indicator == 'Market Capitalization':
-                indicatorValue = str(
-                    input(Stock.indicator + ' of ' + listOfStocks[i].name + ': '))
-            else:
-                print('Something is wrong. Indicator was not found. Ending program.')
-                exit()
+        print(listOfStocks[i].name)
+        if Stock.indicator != 'Persistence':
+            listOfStocks[i].indicatorValue = Stock.scrapeYahooFinance(
+                listOfStocks[i])
+        else:
+            listOfStocks[i].indicatorValue = Stock.calcPersistence(
+                listOfStocks[i])
+        print('')
 
-            if Functions.strintIsFloat(indicatorValue) == True:
-                listOfStocks[i].indicatorValue = float(indicatorValue)
-                indicatorValueFound = True
-            else:
-                print('Please enter a number')
+        if listOfStocks[i].indicatorValue == 'Not available':
+            listOfStocks[i].indicatorValue = Stock.indicatorManual(
+                listOfStocks[i])
 
-        # listOfStocks[i].indicatorValue = indicatorValuesGenericExpenseRatio[i] # TESTING
         listOfStocksIndicatorValues.append(listOfStocks[i].indicatorValue)
 
-    listOfReturns = []  # A list that matches the above list with return values [[averageAnnualReturn1, aAR2, aAR3], [sharpe1, sharpe2, sharpe3], etc.]
+    listOfReturns = []  # A list that matches the above list with return values [[averageMonthlyReturn1, aAR2, aAR3], [sharpe1, sharpe2, sharpe3], etc.]
     tempListOfReturns = []
     for i in range(0, len(listOfStocks), 1):
-        tempListOfReturns.append(listOfStocks[i].averageAnnualReturn)
+        tempListOfReturns.append(listOfStocks[i].averageMonthlyReturn)
     listOfReturns.append(tempListOfReturns)
     tempListOfReturns = []
     for i in range(0, len(listOfStocks), 1):
@@ -974,9 +1315,8 @@ def indicatorMain(listOfStocks):
     Stock.indicatorCorrelation = calcIndicatorCorrelation(
         listOfIndicatorValues, listOfReturns)
 
-    listOfReturnStrings = ['Average Annual Return',
+    listOfReturnStrings = ['Average Monthly Return',
                            'Sharpe Ratio', 'Sortino Ratio', 'Treynor Ratio', 'Alpha']
-    print('\n', end='')
     for i in range(0, len(Stock.indicatorCorrelation), 1):
         print('Correlation with ' + Stock.indicator.lower() + ' and ' +
               listOfReturnStrings[i].lower() + ': ' + str(Stock.indicatorCorrelation[i]))
@@ -992,22 +1332,28 @@ def indicatorMain(listOfStocks):
 
 
 def main():
-    # Test internet connection
-    internetConnection = isConnected()
-    if not internetConnection:
-        return
-
     # Check that all required packages are installed
-    packagesInstalled = checkPackages()
+    packagesInstalled = Functions.checkPackages(
+        ['numpy', 'requests', 'bs4', 'requests_cache'])
     if not packagesInstalled:
-        return
+        exit()
     else:
         print('All required packages are installed')
 
     # Check python version is above 3.3
-    pythonVersionGood = checkPythonVersion()
+    pythonVersionGood = Functions.checkPythonVersion()
     if not pythonVersionGood:
         return
+
+    # Test internet connection
+
+    internetConnection = Functions.isConnected()
+    if not internetConnection:
+        return
+    else:
+        Functions.getJoke()
+
+    # Functions.getJoke()
 
     # Choose benchmark and makes it class Stock
     benchmark = benchmarkInit()
@@ -1017,9 +1363,15 @@ def main():
     # Asks for stock(s) ticker and makes them class Stock
     listOfStocks = stocksInit()
 
-    # Determine time frame [Years, Months]
+    # Determine time frame (Years)
     timeFrame = timeFrameInit()
     Stock.timeFrame = timeFrame  # Needs to be a global variable for all stocks
+
+    # Choose indicator
+    Stock.indicator = indicatorInit()
+    # Choose time frame for initial persistence
+    if Stock.indicator == 'Persistence':
+        Stock.persTimeFrame = persistenceTimeFrame()
 
     # Send async request to AV for listOfStocks and benchmark
     asyncData(benchmark, listOfStocks)

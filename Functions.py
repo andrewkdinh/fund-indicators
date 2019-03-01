@@ -1,6 +1,5 @@
 # Python file for general functions
 
-
 def getNearest(items, pivot):
     return min(items, key=lambda x: abs(x - pivot))
 
@@ -56,6 +55,77 @@ def fromCache(r):
     if r.from_cache == True:
         print('(Response taken from cache)')
     return
+
+
+def getJoke():
+    import requests
+    import requests_cache
+    with requests_cache.disabled():
+        '''
+        f = requests.get('https://official-joke-api.appspot.com/jokes/random').json()
+        print('')
+        print(f['setup'])
+        print(f['punchline'], end='\n\n')
+        '''
+        headers = {'Accept': 'application/json',
+                   'User-Agent': 'fund-indicators (https://github.com/andrewkdinh/fund-indicators)'}
+        f = requests.get('https://icanhazdadjoke.com/', headers=headers).json()
+        print('')
+        print(f['joke'])
+
+
+def hasNumbers(inputString):
+    return any(char.isdigit() for char in inputString)
+
+
+def checkPackages(listOfPackages):
+    import importlib.util
+    import sys
+
+    packagesInstalled = True
+    packages = listOfPackages
+    for i in range(0, len(packages), 1):
+        package_name = packages[i]
+        spec = importlib.util.find_spec(package_name)
+        if spec is None:
+            print(
+                package_name +
+                " is not installed\nPlease enter 'pip install -r requirements.txt' to install all required packages")
+            packagesInstalled = False
+    return packagesInstalled
+
+
+def checkPythonVersion():
+    import platform
+    #print('Checking Python version')
+    i = platform.python_version()
+    r = i.split('.')
+    k = float(''.join((r[0], '.', r[1])))
+    if k < 3.3:
+        print('Your Python version is', i,
+              '\nIt needs to be greater than version 3.3')
+        return False
+    else:
+        print('Your Python version of', i, 'is good')
+        return True
+
+
+def isConnected():
+    import socket  # To check internet connection
+    try:
+        # connect to the host -- tells us if the host is actually reachable
+        socket.create_connection(("www.andrewkdinh.com", 80))
+        print('Internet connection is good')
+        return True
+    except OSError:
+        # pass
+        print("No internet connection!")
+    return False
+
+
+def fileExists(file):
+    import os.path
+    return os.path.exists(file)
 
 
 def main():

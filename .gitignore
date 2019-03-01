@@ -1,5 +1,6 @@
 __pycache__/
 test/
 .vscode/
-requests_cache.sqlite
+*.sqlite
 README.html
+*stocks.txt
