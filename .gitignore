@@ -1,8 +1,6 @@
-__pycache__/StockData.cpython-37.pyc
 __pycache__/
-*.pyc
-quickstart.py
-creds.json
 test/
 .vscode/
-listGoogle.py
+*.sqlite
+README.html
+*-stocks.txt

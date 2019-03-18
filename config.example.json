@@ -1,0 +1,63 @@
+{
+  "_comment": "Only use this if everything you know is correct",
+  "Config": {
+    "Check Packages": true,
+    "Check Python Version": true,
+    "Check Internet Connection": false,
+    "Get Joke": true,
+    "Benchmark": "SPY",
+    "Method": "Kiplinger",
+    "Time Frame": 60,
+    "Indicator": "Expense Ratio",
+    "Remove Outliers": true,
+    "Sources": [
+      "Alpha Vantage",
+      "Yahoo",
+      "IEX",
+      "Tiingo"
+    ]
+  },
+  "Possible Values": {
+    "Check Packages": [
+      true,
+      false
+    ],
+    "Check Python Version": [
+      true,
+      false
+    ],
+    "Check Internet Connection": [
+      true,
+      false
+    ],
+    "Get Joke": [
+      true,
+      false
+    ],
+    "Benchmark": [
+      "SPY",
+      "DJIA",
+      "VTHR",
+      "EFG"
+    ],
+    "Method": [
+      "Read",
+      "Manual",
+      "U.S. News",
+      "Kiplinger",
+      "TheStreet"
+    ],
+    "Time Frame": "Any integer",
+    "Indicator": [
+      "Expense Ratio",
+      "Market Capitalization",
+      "Turnover",
+      "Persistence"
+    ],
+    "Remove Outliers": [
+      true,
+      false
+    ],
+    "Sources": "Choose an order out of ['Alpha Vantage', 'Yahoo', 'IEX', 'Tiingo']"
+  }
+}
