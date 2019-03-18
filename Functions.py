@@ -1,5 +1,8 @@
 # Python file for general functions
 
+import sys
+sys.path.insert(0, './modules')
+
 def getNearest(items, pivot):
     return min(items, key=lambda x: abs(x - pivot))
 
@@ -52,14 +55,18 @@ def strintIsFloat(s):
 
 def fromCache(r):
     import requests_cache
+    from termcolor import colored, cprint
     if r.from_cache == True:
-        print('(Response taken from cache)')
+        cprint('(Response taken from cache)', 'white', attrs=['dark'])
     return
 
 
 def getJoke():
     import requests
+    import sys
+    from termcolor import colored, cprint
     import requests_cache
+    from halo import Halo
     with requests_cache.disabled():
         '''
         f = requests.get('https://official-joke-api.appspot.com/jokes/random').json()
@@ -69,9 +76,13 @@ def getJoke():
         '''
         headers = {'Accept': 'application/json',
                    'User-Agent': 'fund-indicators (https://github.com/andrewkdinh/fund-indicators)'}
-        f = requests.get('https://icanhazdadjoke.com/', headers=headers).json()
+        url = 'https://icanhazdadjoke.com'
+
+        cprint('Get: ' + url, 'white', attrs=['dark'])
+        with Halo(spinner='dots'):
+            f = requests.get('https://icanhazdadjoke.com/', headers=headers).json()
         print('')
-        print(f['joke'])
+        print(colored(f['joke'], 'green'))
 
 
 def hasNumbers(inputString):
@@ -127,6 +138,50 @@ def fileExists(file):
     import os.path
     return os.path.exists(file)
 
+def listIndexExists(i):
+    try:
+        i
+        return True
+    except IndexError:
+        return False
+
+def removeOutliers(i):
+    import statistics
+    m = statistics.median(i)
+    firstQ = []
+    thirdQ = []
+    for x in i:
+        if x < m:
+            firstQ.append(x)
+        elif x > m:
+            thirdQ.append(x)
+    firstQm = statistics.median(firstQ)
+    thirdQm = statistics.median(thirdQ)
+    iqr = (thirdQm - firstQm) * 1.5
+
+    goodList = []
+    badList = []
+    for x in i:
+        if x < (thirdQm + iqr) and x > (firstQm - iqr):
+            goodList.append(x)
+        else:
+            badList.append(x) # In case I want to know. If not, then I just make it equal to returnlist[0]
+    returnList = [goodList, badList, firstQm, m, thirdQm, iqr]
+    return returnList
+
+def validateJson(text):
+    import json
+    try:
+        json.loads(text)
+        return True
+    except ValueError:
+        return False
+
+def keyInDict(dict, key):
+    if key in dict:
+        return True
+    else:
+        return False
 
 def main():
     exit()

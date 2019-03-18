@@ -3,4 +3,4 @@ test/
 .vscode/
 *.sqlite
 README.html
-*stocks.txt
+*-stocks.txt
