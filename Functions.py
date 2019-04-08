@@ -11,7 +11,7 @@ def getNearest(items, pivot):
 def stringToDate(date):
     from datetime import datetime
 
-    #datetime_object = datetime.strptime('Jun 1 2005  1:33PM', '%b %d %Y %I:%M%p')
+    # datetime_object = datetime.strptime('Jun 1 2005  1:33PM', '%b %d %Y %I:%M%p')
     datetime_object = datetime.strptime(date, '%Y-%m-%d').date()
     return(datetime_object)
 
@@ -57,17 +57,17 @@ def strintIsFloat(s):
 def fromCache(r):
     import requests_cache
     from termcolor import colored, cprint
-    if r.from_cache == True:
+    if r.from_cache is True:
         cprint('(Response taken from cache)', 'white', attrs=['dark'])
     return
 
 
 def getJoke():
     import requests
-    import sys
     from termcolor import colored, cprint
     import requests_cache
     from halo import Halo
+    import sys
     with requests_cache.disabled():
         '''
         f = requests.get('https://official-joke-api.appspot.com/jokes/random').json()
@@ -81,7 +81,7 @@ def getJoke():
 
         cprint('Get: ' + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
-            f = requests.get('https://icanhazdadjoke.com/',
+            f = requests.get(url,
                              headers=headers).json()
         print('')
         print(colored(f['joke'], 'green'))
@@ -118,7 +118,7 @@ def checkPackages(listOfPackages):
 
 def checkPythonVersion():
     import platform
-    #print('Checking Python version')
+    # print('Checking Python version')
     i = platform.python_version()
     r = i.split('.')
     k = float(''.join((r[0], '.', r[1])))
@@ -135,7 +135,7 @@ def isConnected():
     import socket  # To check internet connection
     try:
         # connect to the host -- tells us if the host is actually reachable
-        socket.create_connection(("www.andrewkdinh.com", 80))
+        socket.create_connection(('1.1.1.1', 53))
         print('Internet connection is good')
         return True
     except OSError:
@@ -199,9 +199,43 @@ def keyInDict(dict, key):
         return False
 
 
+def getWeather():
+    import requests
+    from termcolor import colored, cprint
+    import requests_cache
+    from halo import Halo
+    import sys
+    sys.path.insert(0, './modules')
+    with requests_cache.disabled():
+        url = 'https://wttr.in?format=3'
+
+        cprint('Get: ' + url, 'white', attrs=['dark'])
+        with Halo(spinner='dots'):
+            f = requests.get(url)
+        print('')
+        print(colored('Current weather in ' + f.text, 'green'), end='')
+
+
 def main():
     exit()
 
 
 if __name__ == "__main__":
     main()
+
+'''
+Copyright (C) 2019 Andrew Dinh
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''

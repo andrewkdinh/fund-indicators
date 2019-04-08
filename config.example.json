@@ -6,7 +6,6 @@
     "Check Internet Connection": false,
     "Get Joke": true,
     "Benchmark": "SPY",
-    "Method": "Kiplinger",
     "Time Frame": 60,
     "Indicator": "Expense Ratio",
     "Remove Outliers": true,
@@ -39,13 +38,6 @@
       "DJIA",
       "VTHR",
       "EFG"
-    ],
-    "Method": [
-      "Read",
-      "Manual",
-      "U.S. News",
-      "Kiplinger",
-      "TheStreet"
     ],
     "Time Frame": "Any integer",
     "Indicator": [

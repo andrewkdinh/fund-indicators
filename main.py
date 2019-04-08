@@ -41,7 +41,8 @@ apiTiingo = '2e72b53f2ab4f5f4724c5c1e4d5d4ac0af3f7ca8'
 apiTradier = 'n26IFFpkOFRVsB5SNTVNXicE5MPD'
 apiQuandl = 'KUh3U3hxke9tCimjhWEF'
 # apiIntrinio = 'OmNmN2E5YWI1YzYxN2Q4NzEzZDhhOTgwN2E2NWRhOWNl'
-# If you're going to take these API keys and abuse it, you should really reconsider your life priorities
+# If you're going to take these API keys and abuse it, you should really
+# reconsider your life priorities
 
 '''
 API Keys:
@@ -77,7 +78,7 @@ class Stock:
 
     # CONFIG
     removeOutliers = True
-    sourceList = ['Alpha Vantage', 'Yahoo', 'IEX', 'Tiingo']
+    sourceList = ['Yahoo', 'Alpha Vantage', 'IEX', 'Tiingo']
     config = 'N/A'
 
     # BENCHMARK VALUES
@@ -147,7 +148,7 @@ class Stock:
 
         print("\nFinding all dates given")
         allDates = []
-        for i in range(0, len(loaded_json), 1):  # If you want to do oldest first
+        for i in range(0, len(loaded_json), 1):  # For oldest first
             # for i in range(len(loaded_json)-1, -1, -1):
             line = loaded_json[i]
             date = line['date']
@@ -157,7 +158,7 @@ class Stock:
 
         # print("\nFinding close values for each date")
         values = []
-        for i in range(0, len(loaded_json), 1):  # If you want to do oldest first
+        for i in range(0, len(loaded_json), 1):  # For oldest first
             # for i in range(len(loaded_json)-1, -1, -1):
             line = loaded_json[i]
             value = line['close']
@@ -215,7 +216,7 @@ class Stock:
             f = requests.get(url, headers=headers)
         Functions.fromCache(f)
         loaded_json = f.json()
-        if len(loaded_json) == 1 or f.status_code != 200 or loaded_json['startDate'] == None:
+        if len(loaded_json) == 1 or f.status_code != 200 or loaded_json['startDate'] is None:
             print("Tiingo not available")
             return 'N/A'
 
@@ -289,8 +290,8 @@ class Stock:
         # Sometimes close value is a None value
         i = 0
         while i < len(listYahoo[1]):
-            if Functions.listIndexExists(listYahoo[1][i]) == True:
-                if listYahoo[1][i] == None:
+            if Functions.listIndexExists(listYahoo[1][i]) is True:
+                if listYahoo[1][i] is None:
                     del listYahoo[1][i]
                     del listYahoo[0][i]
                     i = i - 1
@@ -381,7 +382,7 @@ class Stock:
         print(len(dates), 'dates and', len(closeValues), 'close values')
         return datesAndCloseList2
 
-    def calcAverageMonthlyReturn(self):  # pylint: disable=E0202
+    def calcAverageMonthlyReturn(self):
         # averageMonthlyReturn = (float(self.closeValues[len(self.closeValues)-1]/self.closeValues[0])**(1/(self.timeFrame)))-1
         # averageMonthlyReturn = averageMonthlyReturn * 100
         averageMonthlyReturn = sum(self.monthlyReturn)/self.timeFrame
@@ -687,11 +688,11 @@ class Stock:
                         break
                 if marketCap == 0:
                     somethingWrong = True
-            if somethingWrong == True:
+            if somethingWrong is True:
                 ticker = self.name
                 yahoo_financials = YahooFinancials(ticker)
                 marketCap = yahoo_financials.get_market_cap()
-                if marketCap != None:
+                if marketCap is not None:
                     print('(Taken from yahoofinancials)')
                     print(marketCap)
                     return int(marketCap)
@@ -748,9 +749,6 @@ class Stock:
                     if s[-1] == '%':
                         turnover = float(s.replace('%', ''))
                         break
-                    elif s == 'N/A':
-                        print(self.name, 'has a value of N/A for turnover')
-                        return 'N/A'
 
             if turnover == 0:
                 print('Something went wrong with scraping turnover')
@@ -761,7 +759,7 @@ class Stock:
 
     def indicatorManual(self):
         indicatorValueFound = False
-        while indicatorValueFound == False:
+        while indicatorValueFound is False:
             if Stock.indicator == 'Expense Ratio':
                 indicatorValue = str(
                     input(Stock.indicator + ' for ' + self.name + ' (%): '))
@@ -780,7 +778,7 @@ class Stock:
                     'Something is wrong. Indicator was not found. Ending program.', 'white', 'on_red')
                 exit()
 
-            if Functions.strintIsFloat(indicatorValue) == True:
+            if Functions.strintIsFloat(indicatorValue) is True:
                 indicatorValueFound = True
                 return float(indicatorValue)
             else:
@@ -820,7 +818,7 @@ def benchmarkInit():
         benchmark = str(input('Please choose a benchmark from the list: '))
         # benchmark = 'SPY' # TESTING
 
-        if Functions.stringIsInt(benchmark) == True:
+        if Functions.stringIsInt(benchmark) is True:
             if int(benchmark) <= len(benchmarks) and int(benchmark) > 0:
                 benchmarkInt = int(benchmark)
                 benchmark = benchmarks[benchmarkInt-1]
@@ -853,60 +851,60 @@ def stocksInit():
     print('For simplicity, all of them will be referred to as "stock"')
 
     found = False
-    while found == False:
+    while found is False:
         print('\nMethods:')
         method = 0
         methods = ['Read from a file', 'Enter manually',
-                   'U.S. News popular funds (~35)', 'Kiplinger top-performing funds (50)', 'TheStreet top-rated mutual funds (20)']
+                   'Kiplinger top-performing funds (50)',
+                   'TheStreet top-rated mutual funds (20)',
+                   'Money best mutual funds (50)',
+                   'Investors Business Daily best mutual funds (~45)',
+                   'Yahoo top mutual funds (25)']
 
-        if Stock.config != 'N/A':
-            methodsConfig = ['Read', 'Manual',
-                             'U.S. News', 'Kiplinger', 'TheStreet']
-            for i in range(0, len(methodsConfig), 1):
-                if Stock.config['Method'] == methodsConfig[i]:
-                    method = i + 1
-
-        else:
-            for i in range(0, len(methods), 1):
-                print(str(i+1) + '. ' + methods[i])
-            while method == 0 or method > len(methods):
-                method = str(input('Which method? '))
-                if Functions.stringIsInt(method) == True:
-                    method = int(method)
-                    if method == 0 or method > len(methods):
-                        print('Please choose a valid method')
-                else:
-                    method = 0
-                    print('Please choose a number')
+        for i in range(0, len(methods), 1):
+            print(str(i+1) + '. ' + methods[i])
+        while method == 0 or method > len(methods):
+            method = str(input('Which method? '))
+            if Functions.stringIsInt(method) is True:
+                method = int(method)
+                if method == 0 or method > len(methods):
+                    print('Please choose a valid method')
+            else:
+                method = 0
+                print('Please choose a number')
 
         print('')
         if method == 1:
             defaultFiles = ['.gitignore', 'LICENSE', 'main.py', 'Functions.py',
-                            'README.md', 'requirements.txt', 'cache.sqlite', 'yahoofinancials.py', 'termcolor.py', 'README.html', 'config.json', '_test_runner.py']  # Added by repl.it for whatever reason
+                            'README.md', 'requirements.txt', 'cache.sqlite',
+                            'yahoofinancials.py', 'termcolor.py',
+                            'README.html', 'config.json',
+                            'config.example.json', '_test_runner.py']
+            # Added by repl.it for whatever reason
             stocksFound = False
-            print('\nFiles in current directory (not including default files): ')
+            print('Files in current directory (without default files): ')
             listOfFilesTemp = [f for f in os.listdir() if os.path.isfile(f)]
             listOfFiles = []
             for files in listOfFilesTemp:
-                if files[0] != '.' and any(x in files for x in defaultFiles) != True:
+                if files[0] != '.' and any(x in files for x in defaultFiles) is not True:
                     listOfFiles.append(files)
             for i in range(0, len(listOfFiles), 1):
                 if listOfFiles[i][0] != '.':
                     print(str(i+1) + '. ' + listOfFiles[i])
-            while stocksFound == False:
+            while stocksFound is False:
                 fileName = str(input('What is the file number/name? '))
-                if Functions.stringIsInt(fileName) == True:
+                if Functions.stringIsInt(fileName) is True:
                     if int(fileName) < len(listOfFiles)+1 and int(fileName) > 0:
                         fileName = listOfFiles[int(fileName)-1]
                         print(fileName)
-                if Functions.fileExists(fileName) == True:
+                if Functions.fileExists(fileName) is True:
                     listOfStocks = []
                     file = open(fileName, 'r')
                     n = file.read()
                     file.close()
                     s = re.findall(r'[^,;\s]+', n)
                     for i in s:
-                        if str(i) != '' and Functions.hasNumbers(str(i)) == False:
+                        if str(i) != '' and Functions.hasNumbers(str(i)) is False:
                             listOfStocks.append(str(i).upper())
                     stocksFound = True
                 else:
@@ -922,10 +920,10 @@ def stocksInit():
 
         elif method == 2:
             isInteger = False
-            while isInteger == False:
+            while isInteger is False:
                 temp = input('\nNumber of stocks to analyze (2 minimum): ')
                 isInteger = Functions.stringIsInt(temp)
-                if isInteger == True:
+                if isInteger is True:
                     if int(temp) >= 2:
                         numberOfStocks = int(temp)
                     else:
@@ -939,7 +937,7 @@ def stocksInit():
                 print('Stock', i + 1, end=' ')
                 stockName = str(input('ticker: '))
 
-                if stockName != '' and Functions.hasNumbers(stockName) == False:
+                if stockName != '' and Functions.hasNumbers(stockName) is False:
                     stockName = stockName.upper()
                     listOfStocks.append(stockName)
                     listOfStocks[i] = Stock()
@@ -949,34 +947,6 @@ def stocksInit():
                     print('Invalid ticker')
 
         elif method == 3:
-            listOfStocks = []
-            url = 'https://money.usnews.com/funds/mutual-funds/most-popular'
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36'}
-            cprint('Get: ' + url, 'white', attrs=['dark'])
-            with Halo(spinner='dots'):
-                f = requests.get(url, headers=headers)
-            Functions.fromCache(f)
-            raw_html = f.text
-            soup = BeautifulSoup(raw_html, 'html.parser')
-
-            file = open('usnews-stocks.txt', 'w')
-            r = soup.find_all(
-                'span', attrs={'class': 'text-smaller text-muted'})
-            for k in r:
-                print(k.text.strip(), end=' ')
-                listOfStocks.append(k.text.strip())
-                file.write(str(k.text.strip()) + '\n')
-            file.close()
-
-            for i in range(0, len(listOfStocks), 1):
-                stockName = listOfStocks[i].upper()
-                listOfStocks[i] = Stock()
-                listOfStocks[i].setName(stockName)
-
-            print('\n' + str(len(listOfStocks)) + ' mutual funds total')
-
-        elif method == 4:
             listOfStocks = []
             url = 'https://www.kiplinger.com/tool/investing/T041-S001-top-performing-mutual-funds/index.php'
             headers = {
@@ -1003,7 +973,7 @@ def stocksInit():
 
             print('\n' + str(len(listOfStocks)) + ' mutual funds total')
 
-        elif method == 5:
+        elif method == 4:
             listOfStocks = []
             url = 'https://www.thestreet.com/topic/21421/top-rated-mutual-funds.html'
             headers = {
@@ -1024,6 +994,101 @@ def stocksInit():
                         print(k.text.strip(), end=' ')
                         listOfStocks.append(k.text.strip())
                         file.write(str(k.text.strip()) + '\n')
+            file.close()
+
+            for i in range(0, len(listOfStocks), 1):
+                stockName = listOfStocks[i].upper()
+                listOfStocks[i] = Stock()
+                listOfStocks[i].setName(stockName)
+
+            print('\n' + str(len(listOfStocks)) + ' mutual funds total')
+
+        elif method == 5:
+            listOfStocks = []
+            url = 'http://money.com/money/4616747/best-mutual-funds-etfs-money-50/'
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
+            cprint('Get: ' + url, 'white', attrs=['dark'])
+            with Halo(spinner='dots'):
+                f = requests.get(url, headers=headers)
+            Functions.fromCache(f)
+            raw_html = f.text
+            soup = BeautifulSoup(raw_html, 'html.parser')
+
+            file = open('money.com-stocks.txt', 'w')
+            r = soup.find_all('td')
+
+            for k in r:
+                t = k.text.strip()
+                if '(' in t and ')' in t:
+                    t = t.split('(')[1]
+                    t = t.split(')')[0]
+                    print(t, end=' ')
+                    listOfStocks.append(t)
+                    file.write(str(t + '\n'))
+            file.close()
+
+            for i in range(0, len(listOfStocks), 1):
+                stockName = listOfStocks[i].upper()
+                listOfStocks[i] = Stock()
+                listOfStocks[i].setName(stockName)
+
+            print('\n' + str(len(listOfStocks)) + ' mutual funds total')
+
+        elif method == 6:
+            listOfStocks = []
+            listOfStocksOriginal = []
+            url = 'https://www.investors.com/etfs-and-funds/mutual-funds/best-mutual-funds-beating-sp-500-over-last-1-3-5-10-years/'
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
+            cprint('Get: ' + url, 'white', attrs=['dark'])
+            with Halo(spinner='dots'):
+                f = requests.get(url, headers=headers)
+            Functions.fromCache(f)
+            raw_html = f.text
+            soup = BeautifulSoup(raw_html, 'html.parser')
+
+            file = open('investors-stocks.txt', 'w')
+            r = soup.find_all('td')
+
+            for k in r:
+                t = k.text.strip()
+                if len(t) == 5 and Functions.strintIsFloat(t) is False:
+                    if t not in listOfStocksOriginal or listOfStocksOriginal == []:
+                        listOfStocksOriginal.append(t)
+                        print(t, end=' ')
+                        listOfStocks.append(k.text.strip())
+                        file.write(str(k.text.strip()) + '\n')
+            file.close()
+
+            for i in range(0, len(listOfStocks), 1):
+                stockName = listOfStocks[i].upper()
+                listOfStocks[i] = Stock()
+                listOfStocks[i].setName(stockName)
+
+            print('\n' + str(len(listOfStocks)) + ' mutual funds total')
+
+        elif method == 7:
+            listOfStocks = []
+            url = 'https://finance.yahoo.com/screener/predefined/top_mutual_funds/'
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
+            cprint('Get: ' + url, 'white', attrs=['dark'])
+            with Halo(spinner='dots'):
+                f = requests.get(url, headers=headers)
+            Functions.fromCache(f)
+            raw_html = f.text
+            soup = BeautifulSoup(raw_html, 'html.parser')
+
+            file = open('yahoo-stocks.txt', 'w')
+            r = soup.find_all('a', attrs={'class': 'Fw(600)'})
+
+            for k in r:
+                t = k.text.strip()
+                if len(t) == 5 and t == t.upper():
+                    print(t, end=' ')
+                    listOfStocks.append(k.text.strip())
+                    file.write(str(k.text.strip()) + '\n')
             file.close()
 
             for i in range(0, len(listOfStocks), 1):
@@ -1089,12 +1154,12 @@ def sendAsync(url):
 
 def timeFrameInit():
     isInteger = False
-    while isInteger == False:
+    while isInteger is False:
         print(
             '\nPlease enter the time frame in months (<60 months recommended):', end='')
         temp = input(' ')
         isInteger = Functions.stringIsInt(temp)
-        if isInteger == True:
+        if isInteger is True:
             if int(temp) > 1 and int(temp) < 1000:
                 months = int(temp)
             else:
@@ -1111,7 +1176,11 @@ def dataMain(listOfStocks):
     i = 0
     while i < len(listOfStocks):
 
-        datesAndCloseList = Stock.datesAndClose(listOfStocks[i])
+        try:
+            datesAndCloseList = Stock.datesAndClose(listOfStocks[i])
+        except:
+            print('Error retrieving data')
+            datesAndCloseList = 'N/A'
         if datesAndCloseList == 'N/A':
             del listOfStocks[i]
             if len(listOfStocks) == 0:
@@ -1229,7 +1298,7 @@ def returnMain(benchmark, listOfStocks):
     cprint('\nNumber of stocks from original list that fit time frame: ' +
            str(len(listOfStocks)), 'green')
     if len(listOfStocks) < 2:
-         #print('Cannot proceed to the next step. Exiting program.')
+        # print('Cannot proceed to the next step. Exiting program.')
         cprint('Cannot proceed to the next step. Exiting program.',
                'white', 'on_red')
         exit()
@@ -1239,7 +1308,7 @@ def outlierChoice():
     print('\nWould you like to remove indicator outliers?')
     print('1. Yes\n2. No')
     found = False
-    while found == False:
+    while found is False:
         outlierChoice = str(input('Choice: '))
         if Functions.stringIsInt(outlierChoice):
             if int(outlierChoice) == 1:
@@ -1265,12 +1334,12 @@ def indicatorInit():
     print('List of indicators:')
     for i in range(0, len(listOfIndicators), 1):
         print(str(i + 1) + '. ' + listOfIndicators[i])
-    while indicatorFound == False:
+    while indicatorFound is False:
         indicator = str(input('Choose an indicator from the list: '))
 
         # indicator = 'expense ratio' # TESTING
 
-        if Functions.stringIsInt(indicator) == True:
+        if Functions.stringIsInt(indicator) is True:
             if int(indicator) <= 4 and int(indicator) > 0:
                 indicator = listOfIndicators[int(indicator)-1]
                 indicatorFound = True
@@ -1284,7 +1353,7 @@ def indicatorInit():
                         indicatorFound = True
                         break
 
-        if indicatorFound == False:
+        if indicatorFound is False:
             print('Please choose an indicator from the list\n')
 
     return indicator
@@ -1374,7 +1443,7 @@ def plot_regression_line(x, y, b, i):
         plt.pause(1)
         sys.stdout.flush()
     sys.stdout.write(
-        '                                                                         \r')
+        '                                                                  \r')
     sys.stdout.flush()
     plt.close()
 
@@ -1382,10 +1451,10 @@ def plot_regression_line(x, y, b, i):
 def persistenceTimeFrame():
     print('\nTime frame you chose was', Stock.timeFrame, 'months')
     persTimeFrameFound = False
-    while persTimeFrameFound == False:
+    while persTimeFrameFound is False:
         persistenceTimeFrame = str(
             input('Please choose how many months to measure persistence: '))
-        if Functions.stringIsInt(persistenceTimeFrame) == True:
+        if Functions.stringIsInt(persistenceTimeFrame) is True:
             if int(persistenceTimeFrame) > 0 and int(persistenceTimeFrame) < Stock.timeFrame - 1:
                 persistenceTimeFrame = int(persistenceTimeFrame)
                 persTimeFrameFound = True
@@ -1409,8 +1478,12 @@ def indicatorMain(listOfStocks):
             listOfStocks[i].indicatorValue = Stock.calcPersistence(
                 listOfStocks[i])
         else:
-            listOfStocks[i].indicatorValue = Stock.scrapeYahooFinance(
-                listOfStocks[i])
+            try:
+                listOfStocks[i].indicatorValue = Stock.scrapeYahooFinance(
+                    listOfStocks[i])
+            except:
+                print('Error retrieving indicator data')
+                listOfStocks[i].indicatorValue = 'N/A'
         print('')
 
         if listOfStocks[i].indicatorValue == 'N/A':
@@ -1428,11 +1501,11 @@ def indicatorMain(listOfStocks):
         listOfStocksIndicatorValues.append(listOfStocks[i].indicatorValue)
 
     # Remove outliers
-    if Stock.removeOutliers == True:
+    if Stock.removeOutliers is True:
         cprint('\nRemoving outliers\n', 'white', attrs=['underline'])
         temp = Functions.removeOutliers(listOfStocksIndicatorValues)
         if temp[0] == listOfStocksIndicatorValues:
-            print('No outliers\n')
+            print('No indicator outliers\n')
         else:
             print('First quartile:', temp[2], ', Median:', temp[3],
                   ', Third quartile:', temp[4], 'Interquartile range:', temp[5])
@@ -1502,12 +1575,12 @@ def indicatorMain(listOfStocks):
 
 
 def checkConfig(fileName):
-    if Functions.fileExists(fileName) == False:
+    if Functions.fileExists(fileName) is False:
         return 'N/A'
     file = open(fileName, 'r')
     n = file.read()
     file.close()
-    if Functions.validateJson(n) == False:
+    if Functions.validateJson(n) is False:
         print('Config file is not valid')
         return 'N/A'
     t = json.loads(n)
@@ -1516,12 +1589,14 @@ def checkConfig(fileName):
 
 
 def main():
-    # Check config file for errors and if not, then use values
+    '''
+    Check config file for errors and if not, then use values
     #! Only use this if you know it is exactly correct. I haven't spent much time debugging this
+    '''
     Stock.config = checkConfig('config.json')
 
     # Check if matplotlib is installed
-    if Functions.checkPackage('matplotlib') == False:
+    if Functions.checkPackage('matplotlib') is False:
         print(
             'matplotlib is not installed. This is required for plotting linear regression')
 
@@ -1545,6 +1620,7 @@ def main():
             exit()
         else:
             Functions.getJoke()
+            # Functions.getWeather()
 
         # Choose benchmark and makes it class Stock
         benchmark = benchmarkInit()
@@ -1567,7 +1643,7 @@ def main():
         # Choose whether to remove outliers or not
         Stock.removeOutliers = outlierChoice()
     else:
-        if Stock.config['Check Packages'] != False:
+        if Stock.config['Check Packages'] is not False:
             packagesInstalled = Functions.checkPackages(
                 ['numpy', 'requests', 'bs4', 'requests_cache', 'halo'])
             if not packagesInstalled:
@@ -1575,16 +1651,16 @@ def main():
             else:
                 print('All required packages are installed')
 
-        if Stock.config['Check Python Version'] != False:
+        if Stock.config['Check Python Version'] is not False:
             pythonVersionGood = Functions.checkPythonVersion()
             if not pythonVersionGood:
                 exit()
 
-        if Stock.config['Check Internet Connection'] != False:
+        if Stock.config['Check Internet Connection'] is not False:
             internetConnection = Functions.isConnected()
             if not internetConnection:
                 exit()
-        if Stock.config['Get Joke'] != False:
+        if Stock.config['Get Joke'] is not False:
             Functions.getJoke()
 
         benchmarksTicker = ['SPY', 'DJIA', 'VTHR', 'EFT']
@@ -1615,7 +1691,7 @@ def main():
             Stock.persTimeFrame = persistenceTimeFrame()
 
         # Choose whether to remove outliers or not
-        if Stock.config['Remove Outliers'] != False:
+        if Stock.config['Remove Outliers'] is not False:
             Stock.removeOutliers = True
         else:
             Stock.removeOutliers = outlierChoice()
@@ -1640,3 +1716,20 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+'''
+Copyright (C) 2019 Andrew Dinh
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
