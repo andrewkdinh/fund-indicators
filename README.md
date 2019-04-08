@@ -40,7 +40,7 @@ python main.py
 
 ### Contributing
 
-Want to help? Great! Check out the [CONTRIBUTING.md](https://github.com/andrewkdinh/fund-indicators/CONTRIBUTING.md) file!
+Want to help? Great! Check out the [CONTRIBUTING.md](https://github.com/andrewkdinh/fund-indicators/blob/master/CONTRIBUTING.md) file!
 
 ## Credits
 
