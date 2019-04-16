@@ -54,6 +54,6 @@ This project utilizes a wide variety of open-source projects:
 
 And thank you to those that have helped me with the idea and product:
 
-- Amber Bruce, [Alex Stoykov](http://stoykov.us/), Doug Achterman, [Stack Overflow](https://stackoverflow.com)
+- Amber Bruce, [Alex Stoykov](https://stoykov.us), Doug Achterman, [Stack Overflow](https://stackoverflow.com)
 
 Licensed under [GPL-3.0](https://raw.githubusercontent.com/andrewkdinh/fund-indicators/master/LICENSE) | Copyright (C) 2019  Andrew Dinh
