@@ -79,7 +79,7 @@ def getJoke():
                    'User-Agent': 'fund-indicators (https://github.com/andrewkdinh/fund-indicators)'}
         url = 'https://icanhazdadjoke.com'
 
-        cprint('Get: ' + url, 'white', attrs=['dark'])
+        cprint('Get:' + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             f = requests.get(url,
                              headers=headers).json()
@@ -209,11 +209,45 @@ def getWeather():
     with requests_cache.disabled():
         url = 'https://wttr.in?format=3'
 
-        cprint('Get: ' + url, 'white', attrs=['dark'])
+        cprint('Get:' + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             f = requests.get(url)
         print('')
         print(colored('Current weather in ' + f.text, 'green'), end='')
+
+
+def detectDisplay():
+    import os
+    try:
+        t = os.environ["DISPLAY"]
+    except KeyError:
+        return False
+    if t == ':0.0':
+        return True
+    else:
+        return False
+
+
+def trueOrFalse():
+    found = False
+    print('[1] Yes\n[2] No')
+    while found is False:
+        answer = str(input('Answer: '))
+        if stringIsInt(answer) is True:
+            temp = int(answer)
+            if temp == 1:
+                return True
+            elif temp == 2:
+                return False
+            else:
+                print('Please choose either 1 or 2')
+                pass
+        elif answer.lower() == 'yes':
+            return True
+        elif answer.lower() == 'no':
+            return False
+        else:
+            print('Please either choose a number or type an answer')
 
 
 def main():

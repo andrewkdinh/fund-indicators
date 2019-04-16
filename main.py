@@ -19,7 +19,10 @@ from bs4 import BeautifulSoup
 import numpy as np
 
 # OPTIONAL
-# import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except:
+    pass
 from halo import Halo
 
 # FOR ASYNC
@@ -79,6 +82,7 @@ class Stock:
     # CONFIG
     removeOutliers = True
     sourceList = ['Yahoo', 'Alpha Vantage', 'IEX', 'Tiingo']
+    plotIndicatorRegression = False
     config = 'N/A'
 
     # BENCHMARK VALUES
@@ -135,7 +139,7 @@ class Stock:
         url = ''.join(
             ('https://api.iextrading.com/1.0/stock/', self.name, '/chart/5y'))
         # link = "https://api.iextrading.com/1.0/stock/spy/chart/5y"
-        cprint("Get: " + url, 'white', attrs=['dark'])
+        cprint("Get:" + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             f = requests.get(url)
         Functions.fromCache(f)
@@ -174,7 +178,7 @@ class Stock:
                        self.name, '&outputsize=full&apikey=', apiAV))
         # https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=MSFT&outputsize=full&apikey=demo
 
-        cprint("Get: " + url, 'white', attrs=['dark'])
+        cprint("Get:" + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             f = requests.get(url)
         Functions.fromCache(f)
@@ -211,7 +215,7 @@ class Stock:
             'Authorization': token
         }
         url = ''.join(('https://api.tiingo.com/tiingo/daily/', self.name))
-        cprint("Get: " + url, 'white', attrs=['dark'])
+        cprint("Get:" + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             f = requests.get(url, headers=headers)
         Functions.fromCache(f)
@@ -233,7 +237,7 @@ class Stock:
         url2 = ''.join((url, '/prices?startDate=',
                         firstDate, '&endDate=', lastDate))
         # https://api.tiingo.com/tiingo/daily/<ticker>/prices?startDate=2012-1-1&endDate=2016-1-1
-        cprint("\nGet: " + url2 + '\n', 'white', attrs=['dark'])
+        cprint("\nGet:" + url2 + '\n', 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             requestResponse2 = requests.get(url2, headers=headers)
         Functions.fromCache(requestResponse2)
@@ -261,7 +265,7 @@ class Stock:
     def Yahoo(self):
         url = ''.join(('https://finance.yahoo.com/quote/',
                        self.name, '?p=', self.name))
-        cprint('Get: ' + url, 'white', attrs=['dark'])
+        cprint('Get:' + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             t = requests.get(url)
         if t.history:
@@ -563,7 +567,7 @@ class Stock:
         # Determine if ETF, Mutual fund, or stock
         url = ''.join(('https://finance.yahoo.com/quote/',
                        self.name, '?p=', self.name))
-        cprint('Get: ' + url, 'white', attrs=['dark'])
+        cprint('Get:' + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             t = requests.get(url)
         Functions.fromCache(t)
@@ -575,7 +579,7 @@ class Stock:
 
         stockType = ''
         url2 = ''.join(('https://finance.yahoo.com/lookup?s=', self.name))
-        cprint('Get: ' + url2, 'white', attrs=['dark'])
+        cprint('Get:' + url2, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             x = requests.get(url2)
             raw_html = x.text
@@ -733,7 +737,7 @@ class Stock:
                 url = ''.join(('https://finance.yahoo.com/quote/',
                                self.name, '/profile?p=', self.name))
                 # https://finance.yahoo.com/quote/SPY/profile?p=SPY
-                cprint('Get: ' + url, 'white', attrs=['dark'])
+                cprint('Get:' + url, 'white', attrs=['dark'])
                 with Halo(spinner='dots'):
                     raw_html = requests.get(url).text
                 soup = BeautifulSoup(raw_html, 'html.parser')
@@ -811,7 +815,7 @@ def benchmarkInit():
     benchmarksTicker = ['SPY', 'DJIA', 'VTHR', 'EFT']
     print('\nList of benchmarks:')
     for i in range(0, len(benchmarks), 1):
-        print(str(i+1) + '. ' +
+        print('[' + str(i+1) + '] ' +
               benchmarks[i] + ' (' + benchmarksTicker[i] + ')')
     while benchmarkTicker == '':
 
@@ -862,7 +866,7 @@ def stocksInit():
                    'Yahoo top mutual funds (25)']
 
         for i in range(0, len(methods), 1):
-            print(str(i+1) + '. ' + methods[i])
+            print('[' + str(i+1) + '] ' + methods[i])
         while method == 0 or method > len(methods):
             method = str(input('Which method? '))
             if Functions.stringIsInt(method) is True:
@@ -877,9 +881,9 @@ def stocksInit():
         if method == 1:
             defaultFiles = ['.gitignore', 'LICENSE', 'main.py', 'Functions.py',
                             'README.md', 'requirements.txt', 'cache.sqlite',
-                            'yahoofinancials.py', 'termcolor.py',
-                            'README.html', 'config.json',
-                            'config.example.json', '_test_runner.py']
+                            'config.json', 'CONTRIBUTING.md',
+                            'config.example.json', '_test_runner.py',
+                            'CODE-OF-CONDUCT.md']
             # Added by repl.it for whatever reason
             stocksFound = False
             print('Files in current directory (without default files): ')
@@ -890,7 +894,7 @@ def stocksInit():
                     listOfFiles.append(files)
             for i in range(0, len(listOfFiles), 1):
                 if listOfFiles[i][0] != '.':
-                    print(str(i+1) + '. ' + listOfFiles[i])
+                    print('[' + str(i+1) + '] ' + listOfFiles[i])
             while stocksFound is False:
                 fileName = str(input('What is the file number/name? '))
                 if Functions.stringIsInt(fileName) is True:
@@ -921,7 +925,7 @@ def stocksInit():
         elif method == 2:
             isInteger = False
             while isInteger is False:
-                temp = input('\nNumber of stocks to analyze (2 minimum): ')
+                temp = input('Number of stocks to analyze (2 minimum): ')
                 isInteger = Functions.stringIsInt(temp)
                 if isInteger is True:
                     if int(temp) >= 2:
@@ -951,7 +955,7 @@ def stocksInit():
             url = 'https://www.kiplinger.com/tool/investing/T041-S001-top-performing-mutual-funds/index.php'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Get: ' + url, 'white', attrs=['dark'])
+            cprint('Get:' + url, 'white', attrs=['dark'])
             with Halo(spinner='dots'):
                 f = requests.get(url, headers=headers)
             Functions.fromCache(f)
@@ -978,7 +982,7 @@ def stocksInit():
             url = 'https://www.thestreet.com/topic/21421/top-rated-mutual-funds.html'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Get: ' + url, 'white', attrs=['dark'])
+            cprint('Get:' + url, 'white', attrs=['dark'])
             with Halo(spinner='dots'):
                 f = requests.get(url, headers=headers)
             Functions.fromCache(f)
@@ -1008,7 +1012,7 @@ def stocksInit():
             url = 'http://money.com/money/4616747/best-mutual-funds-etfs-money-50/'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Get: ' + url, 'white', attrs=['dark'])
+            cprint('Get:' + url, 'white', attrs=['dark'])
             with Halo(spinner='dots'):
                 f = requests.get(url, headers=headers)
             Functions.fromCache(f)
@@ -1041,7 +1045,7 @@ def stocksInit():
             url = 'https://www.investors.com/etfs-and-funds/mutual-funds/best-mutual-funds-beating-sp-500-over-last-1-3-5-10-years/'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Get: ' + url, 'white', attrs=['dark'])
+            cprint('Get:' + url, 'white', attrs=['dark'])
             with Halo(spinner='dots'):
                 f = requests.get(url, headers=headers)
             Functions.fromCache(f)
@@ -1055,10 +1059,11 @@ def stocksInit():
                 t = k.text.strip()
                 if len(t) == 5 and Functions.strintIsFloat(t) is False:
                     if t not in listOfStocksOriginal or listOfStocksOriginal == []:
-                        listOfStocksOriginal.append(t)
-                        print(t, end=' ')
-                        listOfStocks.append(k.text.strip())
-                        file.write(str(k.text.strip()) + '\n')
+                        if t[-1] != '%':
+                            listOfStocksOriginal.append(t)
+                            print(t, end=' ')
+                            listOfStocks.append(k.text.strip())
+                            file.write(str(k.text.strip()) + '\n')
             file.close()
 
             for i in range(0, len(listOfStocks), 1):
@@ -1073,7 +1078,7 @@ def stocksInit():
             url = 'https://finance.yahoo.com/screener/predefined/top_mutual_funds/'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Get: ' + url, 'white', attrs=['dark'])
+            cprint('Get:' + url, 'white', attrs=['dark'])
             with Halo(spinner='dots'):
                 f = requests.get(url, headers=headers)
             Functions.fromCache(f)
@@ -1147,7 +1152,7 @@ def asyncData(benchmark, listOfStocks):
 
 def sendAsync(url):
     time.sleep(random.randrange(0, 2))
-    cprint('Get: ' + url, 'white', attrs=['dark'])
+    cprint('Get:' + url, 'white', attrs=['dark'])
     requests.get(url)
     return
 
@@ -1156,7 +1161,7 @@ def timeFrameInit():
     isInteger = False
     while isInteger is False:
         print(
-            '\nPlease enter the time frame in months (<60 months recommended):', end='')
+            '\nPlease enter the time frame in months (<60 recommended):', end='')
         temp = input(' ')
         isInteger = Functions.stringIsInt(temp)
         if isInteger is True:
@@ -1206,7 +1211,7 @@ def riskFreeRate():
         ('https://www.quandl.com/api/v3/datasets/USTREASURY/LONGTERMRATES.json?api_key=', apiQuandl))
     # https://www.quandl.com/api/v3/datasets/USTREASURY/LONGTERMRATES.json?api_key=KUh3U3hxke9tCimjhWEF
 
-    cprint('\nGet: ' + url, 'white', attrs=['dark'])
+    cprint('\nGet:' + url, 'white', attrs=['dark'])
     with Halo(spinner='dots'):
         f = requests.get(url)
     Functions.fromCache(f)
@@ -1290,12 +1295,12 @@ def returnMain(benchmark, listOfStocks):
             listOfStocks[i].sharpe = Stock.calcSharpe(listOfStocks[i])
             listOfStocks[i].sortino = Stock.calcSortino(listOfStocks[i])
             listOfStocks[i].treynor = Stock.calcTreynor(listOfStocks[i])
-            listOfStocks[i].linearRegression = Stock.calcLinearRegression(
-                listOfStocks[i])
+            # listOfStocks[i].linearRegression = Stock.calcLinearRegression(
+            #     listOfStocks[i])
 
             i += 1
 
-    cprint('\nNumber of stocks from original list that fit time frame: ' +
+    cprint('\nNumber of stocks that fit time frame: ' +
            str(len(listOfStocks)), 'green')
     if len(listOfStocks) < 2:
         # print('Cannot proceed to the next step. Exiting program.')
@@ -1306,7 +1311,7 @@ def returnMain(benchmark, listOfStocks):
 
 def outlierChoice():
     print('\nWould you like to remove indicator outliers?')
-    print('1. Yes\n2. No')
+    print('[1] Yes\n[2] No')
     found = False
     while found is False:
         outlierChoice = str(input('Choice: '))
@@ -1333,7 +1338,7 @@ def indicatorInit():
     print('\n', end='')
     print('List of indicators:')
     for i in range(0, len(listOfIndicators), 1):
-        print(str(i + 1) + '. ' + listOfIndicators[i])
+        print('[' + str(i + 1) + '] ' + listOfIndicators[i])
     while indicatorFound is False:
         indicator = str(input('Choose an indicator from the list: '))
 
@@ -1396,7 +1401,8 @@ def calcIndicatorRegression(listOfIndicatorValues, listOfReturns):
         regression.append(b[1])
         regressionList.append(regression)
 
-        # plot_regression_line(x, y, b, i)
+        if Stock.plotIndicatorRegression is True:
+            plot_regression_line(x, y, b, i)
 
     return regressionList
 
@@ -1588,62 +1594,42 @@ def checkConfig(fileName):
     return r
 
 
+def continueProgram():
+    found = False
+    print('Would you like to rerun the program?')
+    return Functions.trueOrFalse()
+
+
+def plotIndicatorRegression():
+    if Functions.detectDisplay() is True:
+        if Functions.checkPackage('matplotlib') is False:
+            print(
+                'matplotlib is not installed. \nIf you would like to install' +
+                ' it (and have a display), run `pip install matplotlib`')
+            return False
+        else:
+            print('\nWould you like to plot indicator linear regression '
+                  'results?')
+            plotLinear = Functions.trueOrFalse()
+            if plotLinear is True:
+                return True
+            else:
+                return False
+
+
 def main():
     '''
     Check config file for errors and if not, then use values
-    #! Only use this if you know it is exactly correct. I haven't spent much time debugging this
+    #! Only use this if you know it is exactly correct. I haven't spent much
+    #! time debugging this
     '''
     Stock.config = checkConfig('config.json')
 
-    # Check if matplotlib is installed
-    if Functions.checkPackage('matplotlib') is False:
-        print(
-            'matplotlib is not installed. This is required for plotting linear regression')
+    runningProgram = True
+    while runningProgram is True:
 
-    # Check that all required packages are installed
-    if Stock.config == 'N/A':
-        packagesInstalled = Functions.checkPackages(
-            ['numpy', 'requests', 'bs4', 'requests_cache', 'halo'])
-        if not packagesInstalled:
-            exit()
-        else:
-            print('All required packages are installed')
-
-        # Check python version is above 3.3
-        pythonVersionGood = Functions.checkPythonVersion()
-        if not pythonVersionGood:
-            exit()
-
-        # Test internet connection
-        internetConnection = Functions.isConnected()
-        if not internetConnection:
-            exit()
-        else:
-            Functions.getJoke()
-            # Functions.getWeather()
-
-        # Choose benchmark and makes it class Stock
-        benchmark = benchmarkInit()
-        # Add it to a list to work with other functions
-        benchmarkAsList = [benchmark]
-
-        # Asks for stock(s) ticker and makes them class Stock
-        listOfStocks = stocksInit()
-
-        # Determine time frame (Years)
-        timeFrame = timeFrameInit()
-        Stock.timeFrame = timeFrame  # Needs to be a global variable for all stocks
-
-        # Choose indicator
-        Stock.indicator = indicatorInit()
-        # Choose time frame for initial persistence
-        if Stock.indicator == 'Persistence':
-            Stock.persTimeFrame = persistenceTimeFrame()
-
-        # Choose whether to remove outliers or not
-        Stock.removeOutliers = outlierChoice()
-    else:
-        if Stock.config['Check Packages'] is not False:
+        if Stock.config == 'N/A':
+            # Check that all required packages are installed
             packagesInstalled = Functions.checkPackages(
                 ['numpy', 'requests', 'bs4', 'requests_cache', 'halo'])
             if not packagesInstalled:
@@ -1651,66 +1637,117 @@ def main():
             else:
                 print('All required packages are installed')
 
-        if Stock.config['Check Python Version'] is not False:
+            # Check python version is above 3.3
             pythonVersionGood = Functions.checkPythonVersion()
             if not pythonVersionGood:
                 exit()
 
-        if Stock.config['Check Internet Connection'] is not False:
+            # Test internet connection
             internetConnection = Functions.isConnected()
             if not internetConnection:
                 exit()
-        if Stock.config['Get Joke'] is not False:
-            Functions.getJoke()
+            else:
+                Functions.getJoke()
+                # Functions.getWeather()
 
-        benchmarksTicker = ['SPY', 'DJIA', 'VTHR', 'EFT']
-        if Stock.config['Benchmark'] in benchmarksTicker:
-            benchmark = Stock()
-            benchmark.setName(str(Stock.config['Benchmark']))
-            benchmarkAsList = [benchmark]
-        else:
+            # Choose benchmark and makes it class Stock
             benchmark = benchmarkInit()
+            # Add it to a list to work with other functions
             benchmarkAsList = [benchmark]
 
-        listOfStocks = stocksInit()
+            # Asks for stock(s) ticker and makes them class Stock
+            listOfStocks = stocksInit()
 
-        if int(Stock.config['Time Frame']) >= 2:
-            timeFrame = int(Stock.config['Time Frame'])
-        else:
+            # Determine time frame (Years)
             timeFrame = timeFrameInit()
-        Stock.timeFrame = timeFrame  # Needs to be a global variable for all stocks
+            Stock.timeFrame = timeFrame
 
-        indicators = ['Expense Ratio',
-                      'Market Capitalization', 'Turnover', 'Persistence']
-        if Stock.config['Indicator'] in indicators:
-            Stock.indicator = Stock.config['Indicator']
-        else:
+            # Choose indicator
             Stock.indicator = indicatorInit()
+            # Choose time frame for initial persistence
+            if Stock.indicator == 'Persistence':
+                Stock.persTimeFrame = persistenceTimeFrame()
 
-        if Stock.indicator == 'Persistence':
-            Stock.persTimeFrame = persistenceTimeFrame()
-
-        # Choose whether to remove outliers or not
-        if Stock.config['Remove Outliers'] is not False:
-            Stock.removeOutliers = True
-        else:
+            # Choose whether to remove outliers or not
             Stock.removeOutliers = outlierChoice()
 
-    # Send async request to AV for listOfStocks and benchmark
-    # asyncData(benchmark, listOfStocks)
+            # Check if matplotlib is installed and if so, ask user if
+            # they want to plot
+            Stock.plotIndicatorRegression = plotIndicatorRegression()
 
-    # Gather data for benchmark and stock(s)
-    cprint('\nGathering data', 'white', attrs=['underline'])
-    dataMain(benchmarkAsList)
-    dataMain(listOfStocks)
+        else:
+            if Stock.config['Check Packages'] is not False:
+                packagesInstalled = Functions.checkPackages(
+                    ['numpy', 'requests', 'bs4', 'requests_cache', 'halo'])
+                if not packagesInstalled:
+                    exit()
+                else:
+                    print('All required packages are installed')
 
-    # Calculate return for benchmark and stock(s)
-    returnMain(benchmark, listOfStocks)
+            if Stock.config['Check Python Version'] is not False:
+                pythonVersionGood = Functions.checkPythonVersion()
+                if not pythonVersionGood:
+                    exit()
 
-    # Choose indicator and calculate correlation with indicator
-    indicatorMain(listOfStocks)
+            if Stock.config['Check Internet Connection'] is not False:
+                internetConnection = Functions.isConnected()
+                if not internetConnection:
+                    exit()
+            if Stock.config['Get Joke'] is not False:
+                Functions.getJoke()
 
-    print('')
+            benchmarksTicker = ['SPY', 'DJIA', 'VTHR', 'EFT']
+            if Stock.config['Benchmark'] in benchmarksTicker:
+                benchmark = Stock()
+                benchmark.setName(str(Stock.config['Benchmark']))
+                benchmarkAsList = [benchmark]
+            else:
+                benchmark = benchmarkInit()
+                benchmarkAsList = [benchmark]
+
+            listOfStocks = stocksInit()
+
+            if int(Stock.config['Time Frame']) >= 2:
+                timeFrame = int(Stock.config['Time Frame'])
+            else:
+                timeFrame = timeFrameInit()
+            Stock.timeFrame = timeFrame  # Needs to be a global variable for all stocks
+
+            indicators = ['Expense Ratio',
+                          'Market Capitalization', 'Turnover', 'Persistence']
+            if Stock.config['Indicator'] in indicators:
+                Stock.indicator = Stock.config['Indicator']
+            else:
+                Stock.indicator = indicatorInit()
+
+            if Stock.indicator == 'Persistence':
+                Stock.persTimeFrame = persistenceTimeFrame()
+
+            # Choose whether to remove outliers or not
+            if Stock.config['Remove Outliers'] is not False:
+                Stock.removeOutliers = True
+            else:
+                Stock.removeOutliers = outlierChoice()
+
+        # Send async request to AV for listOfStocks and benchmark
+        # asyncData(benchmark, listOfStocks)
+
+        # Gather data for benchmark and stock(s)
+        cprint('\nGathering data', 'white', attrs=['underline'])
+        dataMain(benchmarkAsList)
+        dataMain(listOfStocks)
+
+        # Calculate return for benchmark and stock(s)
+        returnMain(benchmark, listOfStocks)
+
+        # Choose indicator and calculate correlation with indicator
+        indicatorMain(listOfStocks)
+
+        # Decide if running program again
+        print('')
+        runningProgram = continueProgram()
+        print('')
+
     exit()
 
 

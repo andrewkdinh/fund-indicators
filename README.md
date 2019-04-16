@@ -6,15 +6,9 @@
 ![](https://img.shields.io/github/languages/code-size/andrewkdinh/fund-indicators.svg)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2667/badge)](https://bestpractices.coreinfrastructure.org/projects/2667)
 
-A project to determine relationships between mutual fund performance and different factors.
+fund-indicators is a cross-platform Python application that allows users to easily find relationships between various attributes of mutual funds and previous performance. This project is based on research from [*Performance Indicators of Mutual Funds*](https://nextcloud.andrewkdinh.com/s/xNgGQ4nPNkSqJti).
 
 [![asciicast demo](https://asciinema.org/a/jLmZapnMFGCRiiSUITY21erLW.svg)](https://asciinema.org/a/jLmZapnMFGCRiiSUITY21erLW?autoplay=1&preload=1)
-
-Calculates relationships between: Previous performance, Alpha, Sharpe Ratio, Sortino Ratio
-
-and Expense ratios, Turnover, Market Capitalization (Asset Size), Persistence
-
-Give it a try at [repl.run](https://fund-indicators.andrewkdinh.repl.run) or [repl.it](https://repl.it/@andrewkdinh/fund-indicators).
 
 ## Key Features
 
@@ -26,8 +20,13 @@ Give it a try at [repl.run](https://fund-indicators.andrewkdinh.repl.run) or [re
 - Optional graphs to easily visualize linear regression results
 - A new joke every time
 - Cross-platform (tested on Windows and Linux)
+- Simple to use
 
 ## Quickstart
+
+Give it a try at [repl.run](https://fund-indicators.andrewkdinh.repl.run) or [repl.it](https://repl.it/@andrewkdinh/fund-indicators).
+
+If you would like to clone to your own machine:
 
 ```shell
 git clone https://github.com/andrewkdinh/fund-indicators.git && cd fund-indicators
@@ -38,7 +37,12 @@ python main.py
 - Common mutual funds are listed in `stocks.txt`
 - Configure and rename `config.example.json` to `config.json` if you would like to skip beginning questions (only for advanced users)
 
-### Contributing
+## Planned Features
+
+- Graphical user interface (GUI)
+- Multithreading/asynchronous requests
+
+## Contributing
 
 Want to help? Great! Check out the [CONTRIBUTING.md](https://github.com/andrewkdinh/fund-indicators/blob/master/CONTRIBUTING.md) file!
 
@@ -46,7 +50,7 @@ Want to help? Great! Check out the [CONTRIBUTING.md](https://github.com/andrewkd
 
 This project utilizes a wide variety of open-source projects:
 
-- [NumPy](https://github.com/numpy/numpy), [Termcolor](https://github.com/hfeeki/termcolor), [Beautiful Soup](https://launchpad.net/beautifulsoup), [yahoofinancials](https://github.com/JECSand/yahoofinancials), [requests-cache](https://github.com/reclosedev/requests-cache), [halo](https://github.com/manrajgrover/halo), [matplotlib](https://github.com/matplotlib/matplotlib), [asciinema](https://github.com/asciinema/asciinema)
+- [NumPy](https://github.com/numpy/numpy), [Termcolor](https://github.com/hfeeki/termcolor), [Beautiful Soup](https://launchpad.net/beautifulsoup), [yahoofinancials](https://github.com/JECSand/yahoofinancials), [requests-cache](https://github.com/reclosedev/requests-cache), [halo](https://github.com/manrajgrover/halo), [matplotlib](https://github.com/matplotlib/matplotlib), [asciinema](https://github.com/asciinema/asciinema), [Core Infrastructure Initiative Best Practices Badge](https://github.com/coreinfrastructure/best-practices-badge)
 
 And thank you to those that have helped me with the idea and product:
 

@@ -30,7 +30,7 @@ To develop on fund-indicators you'll probably want to:
 1. Read the [code of conduct](https://github.com/andrewkdinh/fund-indicators/blob/master/CODE-OF-CONDUCT.md)
 2. Install normally, as documented in the [README](https://github.com/andrewkdinh/fund-indicators#quickstart)
 3. Read the [documentation](https://github.com/andrewkdinh/fund-indicators/wiki) (although it's not much)
-4. Read the section below to understand the ways you could best help this project
+4. Read the section above to understand the ways you could best help this project
 
 ## Questions?
 
