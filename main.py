@@ -268,6 +268,7 @@ class Stock:
         cprint('Get:' + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             t = requests.get(url)
+        Functions.fromCache(t)
         if t.history:
             print('Yahoo Finance does not have data for', self.name)
             print('Yahoo not available')
@@ -330,8 +331,8 @@ class Stock:
             else:
                 if j == len(sourceList)-1:
                     print('\nNo sources have data for', self.name)
-                    print('Removing ' + self.name +
-                          ' from list of stocks to ensure compatibility later')
+                    cprint('Removing ' + self.name +
+                          ' because no data was found', 'yellow')
                     return 'N/A'
                 print('')
 
@@ -346,8 +347,8 @@ class Stock:
         for i in datesAndCloseList[1]:
             if i == 0:
                 print('Found close value of 0. This is likely something like ticker RGN (Daily Time Series with Splits and Dividend Events)')
-                print('Removing ' + self.name +
-                      'from list of stocks to ensure compability later')
+                cprint('Removing ' + self.name +
+                      'from list of stocks to ensure compability later', 'yellow')
                 return 'N/A'
 
         return datesAndCloseList
@@ -363,7 +364,7 @@ class Stock:
 
         firstDate = datetime.datetime.now().date() - datetime.timedelta(
             days=self.timeFrame*30)
-        print(self.timeFrame, ' months ago: ', firstDate, sep='')
+        # print(self.timeFrame, ' months ago: ', firstDate, sep='')
         closestDate = Functions.getNearest(dates, firstDate)
         if closestDate != firstDate:
             print('Closest date available for', self.name, ':', closestDate)
@@ -409,8 +410,8 @@ class Stock:
             secondDate = Functions.getNearest(self.dates, secondDate)
 
             if firstDate == secondDate:
-                print('Closest date is', firstDate,
-                      'which is after the given time frame.')
+                print('Closest date is ' + str(firstDate) + 
+                      ', which is after the given time frame')
                 return 'N/A'
 
             # Get corresponding close values and calculate monthly return
@@ -739,7 +740,9 @@ class Stock:
                 # https://finance.yahoo.com/quote/SPY/profile?p=SPY
                 cprint('Get:' + url, 'white', attrs=['dark'])
                 with Halo(spinner='dots'):
-                    raw_html = requests.get(url).text
+                    t = requests.get(url)
+                Functions.fromCache(t)
+                raw_html = t.text
                 soup = BeautifulSoup(raw_html, 'html.parser')
 
                 r = soup.find_all(
@@ -777,9 +780,8 @@ class Stock:
                 indicatorValue = str(
                     input(Stock.indicator + ' of ' + self.name + ': '))
             else:
-                # print('Something is wrong. Indicator was not found. Ending program.')
                 cprint(
-                    'Something is wrong. Indicator was not found. Ending program.', 'white', 'on_red')
+                    'Something is wrong. Indicator was not found. Ending program', 'white', 'on_red')
                 exit()
 
             if Functions.strintIsFloat(indicatorValue) is True:
@@ -838,7 +840,7 @@ def benchmarkInit():
                     break
 
         if benchmarkTicker == '':
-            print('Benchmark not found. Please use a benchmark from the list')
+            print('Benchmark not found')
 
     print(benchmark, ' (', benchmarkTicker, ')', sep='')
 
@@ -862,8 +864,7 @@ def stocksInit():
                    'Kiplinger top-performing funds (50)',
                    'TheStreet top-rated mutual funds (20)',
                    'Money best mutual funds (50)',
-                   'Investors Business Daily best mutual funds (~45)',
-                   'Yahoo top mutual funds (25)']
+                   'Investors Business Daily best mutual funds (~45)']
 
         for i in range(0, len(methods), 1):
             print('[' + str(i+1) + '] ' + methods[i])
@@ -872,7 +873,7 @@ def stocksInit():
             if Functions.stringIsInt(method) is True:
                 method = int(method)
                 if method == 0 or method > len(methods):
-                    print('Please choose a valid method')
+                    print('Please choose a number from 1 to', len(methods))
             else:
                 method = 0
                 print('Please choose a number')
@@ -1073,36 +1074,6 @@ def stocksInit():
 
             print('\n' + str(len(listOfStocks)) + ' mutual funds total')
 
-        elif method == 7:
-            listOfStocks = []
-            url = 'https://finance.yahoo.com/screener/predefined/top_mutual_funds/'
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Get:' + url, 'white', attrs=['dark'])
-            with Halo(spinner='dots'):
-                f = requests.get(url, headers=headers)
-            Functions.fromCache(f)
-            raw_html = f.text
-            soup = BeautifulSoup(raw_html, 'html.parser')
-
-            file = open('yahoo-stocks.txt', 'w')
-            r = soup.find_all('a', attrs={'class': 'Fw(600)'})
-
-            for k in r:
-                t = k.text.strip()
-                if len(t) == 5 and t == t.upper():
-                    print(t, end=' ')
-                    listOfStocks.append(k.text.strip())
-                    file.write(str(k.text.strip()) + '\n')
-            file.close()
-
-            for i in range(0, len(listOfStocks), 1):
-                stockName = listOfStocks[i].upper()
-                listOfStocks[i] = Stock()
-                listOfStocks[i].setName(stockName)
-
-            print('\n' + str(len(listOfStocks)) + ' mutual funds total')
-
         if len(listOfStocks) < 2:
             print('Please choose another method')
         else:
@@ -1159,14 +1130,18 @@ def sendAsync(url):
 
 def timeFrameInit():
     isInteger = False
+    print('')
     while isInteger is False:
         print(
-            '\nPlease enter the time frame in months (<60 recommended):', end='')
+            'Please enter the time frame in months (<60 recommended):', end='')
         temp = input(' ')
         isInteger = Functions.stringIsInt(temp)
         if isInteger is True:
             if int(temp) > 1 and int(temp) < 1000:
                 months = int(temp)
+            elif int(temp) >= 1000:
+                print('Please enter a number less than 1000')
+                isInteger = False
             else:
                 print('Please enter a number greater than 1')
                 isInteger = False
@@ -1270,7 +1245,7 @@ def returnMain(benchmark, listOfStocks):
         listOfStocks[i].monthlyReturn = Stock.calcMonthlyReturn(
             listOfStocks[i])
         if listOfStocks[i].monthlyReturn == 'N/A':
-            print('Removing ' + listOfStocks[i].name + ' from list of stocks')
+            cprint('Removing ' + listOfStocks[i].name + ' from list of stocks', 'yellow')
             del listOfStocks[i]
             if len(listOfStocks) == 0:
                 print('No stocks fit time frame. Ending program')
@@ -1303,31 +1278,15 @@ def returnMain(benchmark, listOfStocks):
     cprint('\nNumber of stocks that fit time frame: ' +
            str(len(listOfStocks)), 'green')
     if len(listOfStocks) < 2:
-        # print('Cannot proceed to the next step. Exiting program.')
-        cprint('Cannot proceed to the next step. Exiting program.',
+        # print('Cannot proceed to the next step. Exiting program')
+        cprint('Cannot proceed to the next step. Exiting program',
                'white', 'on_red')
         exit()
 
 
 def outlierChoice():
     print('\nWould you like to remove indicator outliers?')
-    print('[1] Yes\n[2] No')
-    found = False
-    while found is False:
-        outlierChoice = str(input('Choice: '))
-        if Functions.stringIsInt(outlierChoice):
-            if int(outlierChoice) == 1:
-                return True
-            elif int(outlierChoice) == 2:
-                return False
-            else:
-                print('Please enter 1 or 2')
-        elif outlierChoice.lower() == 'yes':
-            return True
-        elif outlierChoice.lower() == 'no':
-            return False
-        else:
-            print('Not valid. Please enter a number or yes or no.')
+    return Functions.trueOrFalse()
 
 
 def indicatorInit():
@@ -1359,7 +1318,7 @@ def indicatorInit():
                         break
 
         if indicatorFound is False:
-            print('Please choose an indicator from the list\n')
+            print('Please choose a number from 1 to', len(listOfIndicators), 'or type an answer')
 
     return indicator
 
@@ -1478,7 +1437,9 @@ def indicatorMain(listOfStocks):
     cprint('\n' + str(Stock.indicator) + '\n', 'white', attrs=['underline'])
 
     listOfStocksIndicatorValues = []
-    for i in range(0, len(listOfStocks), 1):
+
+    i = 0
+    while i < len(listOfStocks):
         cprint(listOfStocks[i].name, 'cyan')
         if Stock.indicator == 'Persistence':
             listOfStocks[i].indicatorValue = Stock.calcPersistence(
@@ -1496,15 +1457,17 @@ def indicatorMain(listOfStocks):
             listOfStocks[i].indicatorValue = Stock.indicatorManual(
                 listOfStocks[i])
         elif listOfStocks[i].indicatorValue == 'Stock':
-            print('Removing ' + listOfStocks[i].name + ' from list of stocks')
+            cprint('Removing ' + listOfStocks[i].name + ' from list of stocks', 'yellow')
             del listOfStocks[i]
             if len(listOfStocks) < 2:
                 # print('Not able to go to the next step. Ending program')
                 cprint('Not able to go to the next step. Ending program',
                        'white', 'on_red')
                 exit()
-
-        listOfStocksIndicatorValues.append(listOfStocks[i].indicatorValue)
+        else:
+            listOfStocks[i].indicatorValue = float(listOfStocks[i].indicatorValue)
+            listOfStocksIndicatorValues.append(listOfStocks[i].indicatorValue)
+            i = i + 1
 
     # Remove outliers
     if Stock.removeOutliers is True:
@@ -1518,11 +1481,10 @@ def indicatorMain(listOfStocks):
             # print('Original list:', listOfStocksIndicatorValues)
             listOfStocksIndicatorValues = temp[0]
             i = 0
-            while i < len(listOfStocks)-1:
+            while i < len(listOfStocks):
                 for j in temp[1]:
                     if listOfStocks[i].indicatorValue == j:
-                        print('Removing', listOfStocks[i].name, 'because it has a',
-                              Stock.indicator.lower(), 'value of', listOfStocks[i].indicatorValue)
+                        cprint('Removing ' + listOfStocks[i].name + ' because it has a ' + str(Stock.indicator.lower()) + ' value of ' + str(listOfStocks[i].indicatorValue), 'yellow')
                         del listOfStocks[i]
                         i = i - 1
                         break
@@ -1534,7 +1496,7 @@ def indicatorMain(listOfStocks):
     cprint('Calculating correlation and linear regression\n',
            'white', attrs=['underline'])
 
-    listOfReturns = []  # A list that matches the above list with return values [[averageMonthlyReturn1, aAR2, aAR3], [sharpe1, sharpe2, sharpe3], etc.]
+    listOfReturns = []  # A list that matches the above list with return values [[averageMonthlyReturn1, aMR2, aMR3], [sharpe1, sharpe2, sharpe3], etc.]
     tempListOfReturns = []
     for i in range(0, len(listOfStocks), 1):
         tempListOfReturns.append(listOfStocks[i].averageMonthlyReturn)
@@ -1748,6 +1710,7 @@ def main():
         runningProgram = continueProgram()
         print('')
 
+    print('Goodbye!\n')
     exit()
 
 
