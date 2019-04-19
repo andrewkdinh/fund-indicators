@@ -247,7 +247,7 @@ def trueOrFalse():
         elif answer.lower() == 'no':
             return False
         else:
-            print('Please either choose a number or type an answer')
+            print('Please choose a number or type an answer')
 
 
 def main():

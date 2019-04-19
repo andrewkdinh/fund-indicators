@@ -20,7 +20,6 @@ fund-indicators is a cross-platform Python application that allows users to easi
 - Optional graphs to easily visualize linear regression results
 - A new joke every time
 - Cross-platform (tested on Windows and Linux)
-- Simple to use
 
 ## Quickstart
 
@@ -29,7 +28,8 @@ Give it a try at [repl.run](https://fund-indicators.andrewkdinh.repl.run) or [re
 If you would like to clone to your own machine:
 
 ```shell
-git clone https://github.com/andrewkdinh/fund-indicators.git && cd fund-indicators
+git clone https://github.com/andrewkdinh/fund-indicators.git
+cd fund-indicators
 pip install -r requirements.txt
 python main.py
 ```
