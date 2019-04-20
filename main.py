@@ -139,7 +139,7 @@ class Stock:
         url = ''.join(
             ('https://api.iextrading.com/1.0/stock/', self.name, '/chart/5y'))
         # link = "https://api.iextrading.com/1.0/stock/spy/chart/5y"
-        cprint("Get:" + url, 'white', attrs=['dark'])
+        cprint("Fetch:" + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             f = requests.get(url)
         Functions.fromCache(f)
@@ -178,7 +178,7 @@ class Stock:
                        self.name, '&outputsize=full&apikey=', apiAV))
         # https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=MSFT&outputsize=full&apikey=demo
 
-        cprint("Get:" + url, 'white', attrs=['dark'])
+        cprint("Fetch:" + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             f = requests.get(url)
         Functions.fromCache(f)
@@ -215,7 +215,7 @@ class Stock:
             'Authorization': token
         }
         url = ''.join(('https://api.tiingo.com/tiingo/daily/', self.name))
-        cprint("Get:" + url, 'white', attrs=['dark'])
+        cprint("Fetch:" + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             f = requests.get(url, headers=headers)
         Functions.fromCache(f)
@@ -237,7 +237,7 @@ class Stock:
         url2 = ''.join((url, '/prices?startDate=',
                         firstDate, '&endDate=', lastDate))
         # https://api.tiingo.com/tiingo/daily/<ticker>/prices?startDate=2012-1-1&endDate=2016-1-1
-        cprint("\nGet:" + url2 + '\n', 'white', attrs=['dark'])
+        cprint("\nFetch:" + url2 + '\n', 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             requestResponse2 = requests.get(url2, headers=headers)
         Functions.fromCache(requestResponse2)
@@ -265,7 +265,7 @@ class Stock:
     def Yahoo(self):
         url = ''.join(('https://finance.yahoo.com/quote/',
                        self.name, '?p=', self.name))
-        cprint('Get:' + url, 'white', attrs=['dark'])
+        cprint('Fetch:' + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             t = requests.get(url)
         Functions.fromCache(t)
@@ -332,7 +332,7 @@ class Stock:
                 if j == len(sourceList)-1:
                     print('\nNo sources have data for', self.name)
                     cprint('Removing ' + self.name +
-                          ' because no data was found', 'yellow')
+                           ' because no data was found', 'yellow')
                     return 'N/A'
                 print('')
 
@@ -348,7 +348,7 @@ class Stock:
             if i == 0:
                 print('Found close value of 0. This is likely something like ticker RGN (Daily Time Series with Splits and Dividend Events)')
                 cprint('Removing ' + self.name +
-                      'from list of stocks to ensure compability later', 'yellow')
+                       'from list of stocks to ensure compability later', 'yellow')
                 return 'N/A'
 
         return datesAndCloseList
@@ -367,7 +367,8 @@ class Stock:
         # print(self.timeFrame, ' months ago: ', firstDate, sep='')
         closestDate = Functions.getNearest(dates, firstDate)
         if closestDate != firstDate:
-            print('Closest date available for', self.name, ':', closestDate)
+            print('Closest date available for ' +
+                  str(self.name) + ':' + ' ' + str(closestDate))
             firstDate = closestDate
         else:
             print(self.name, 'has a close value for', firstDate)
@@ -410,7 +411,7 @@ class Stock:
             secondDate = Functions.getNearest(self.dates, secondDate)
 
             if firstDate == secondDate:
-                print('Closest date is ' + str(firstDate) + 
+                print('Closest date is ' + str(firstDate) +
                       ', which is after the given time frame')
                 return 'N/A'
 
@@ -568,7 +569,7 @@ class Stock:
         # Determine if ETF, Mutual fund, or stock
         url = ''.join(('https://finance.yahoo.com/quote/',
                        self.name, '?p=', self.name))
-        cprint('Get:' + url, 'white', attrs=['dark'])
+        cprint('Fetch:' + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             t = requests.get(url)
         Functions.fromCache(t)
@@ -580,7 +581,7 @@ class Stock:
 
         stockType = ''
         url2 = ''.join(('https://finance.yahoo.com/lookup?s=', self.name))
-        cprint('Get:' + url2, 'white', attrs=['dark'])
+        cprint('Fetch:' + url2, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             x = requests.get(url2)
             raw_html = x.text
@@ -738,7 +739,7 @@ class Stock:
                 url = ''.join(('https://finance.yahoo.com/quote/',
                                self.name, '/profile?p=', self.name))
                 # https://finance.yahoo.com/quote/SPY/profile?p=SPY
-                cprint('Get:' + url, 'white', attrs=['dark'])
+                cprint('Fetch:' + url, 'white', attrs=['dark'])
                 with Halo(spinner='dots'):
                     t = requests.get(url)
                 Functions.fromCache(t)
@@ -956,7 +957,7 @@ def stocksInit():
             url = 'https://www.kiplinger.com/tool/investing/T041-S001-top-performing-mutual-funds/index.php'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Get:' + url, 'white', attrs=['dark'])
+            cprint('Fetch:' + url, 'white', attrs=['dark'])
             with Halo(spinner='dots'):
                 f = requests.get(url, headers=headers)
             Functions.fromCache(f)
@@ -983,7 +984,7 @@ def stocksInit():
             url = 'https://www.thestreet.com/topic/21421/top-rated-mutual-funds.html'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Get:' + url, 'white', attrs=['dark'])
+            cprint('Fetch:' + url, 'white', attrs=['dark'])
             with Halo(spinner='dots'):
                 f = requests.get(url, headers=headers)
             Functions.fromCache(f)
@@ -1013,7 +1014,7 @@ def stocksInit():
             url = 'http://money.com/money/4616747/best-mutual-funds-etfs-money-50/'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Get:' + url, 'white', attrs=['dark'])
+            cprint('Fetch:' + url, 'white', attrs=['dark'])
             with Halo(spinner='dots'):
                 f = requests.get(url, headers=headers)
             Functions.fromCache(f)
@@ -1046,7 +1047,7 @@ def stocksInit():
             url = 'https://www.investors.com/etfs-and-funds/mutual-funds/best-mutual-funds-beating-sp-500-over-last-1-3-5-10-years/'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Get:' + url, 'white', attrs=['dark'])
+            cprint('Fetch:' + url, 'white', attrs=['dark'])
             with Halo(spinner='dots'):
                 f = requests.get(url, headers=headers)
             Functions.fromCache(f)
@@ -1123,7 +1124,7 @@ def asyncData(benchmark, listOfStocks):
 
 def sendAsync(url):
     time.sleep(random.randrange(0, 2))
-    cprint('Get:' + url, 'white', attrs=['dark'])
+    cprint('Fetch:' + url, 'white', attrs=['dark'])
     requests.get(url)
     return
 
@@ -1186,7 +1187,7 @@ def riskFreeRate():
         ('https://www.quandl.com/api/v3/datasets/USTREASURY/LONGTERMRATES.json?api_key=', apiQuandl))
     # https://www.quandl.com/api/v3/datasets/USTREASURY/LONGTERMRATES.json?api_key=KUh3U3hxke9tCimjhWEF
 
-    cprint('\nGet:' + url, 'white', attrs=['dark'])
+    cprint('\nFetch:' + url, 'white', attrs=['dark'])
     with Halo(spinner='dots'):
         f = requests.get(url)
     Functions.fromCache(f)
@@ -1245,7 +1246,8 @@ def returnMain(benchmark, listOfStocks):
         listOfStocks[i].monthlyReturn = Stock.calcMonthlyReturn(
             listOfStocks[i])
         if listOfStocks[i].monthlyReturn == 'N/A':
-            cprint('Removing ' + listOfStocks[i].name + ' from list of stocks', 'yellow')
+            cprint('Removing ' +
+                   listOfStocks[i].name + ' from list of stocks', 'yellow')
             del listOfStocks[i]
             if len(listOfStocks) == 0:
                 print('No stocks fit time frame. Ending program')
@@ -1318,7 +1320,8 @@ def indicatorInit():
                         break
 
         if indicatorFound is False:
-            print('Please choose a number from 1 to', len(listOfIndicators), 'or type an answer')
+            print('Please choose a number from 1 to', len(
+                listOfIndicators), 'or type an answer')
 
     return indicator
 
@@ -1457,7 +1460,8 @@ def indicatorMain(listOfStocks):
             listOfStocks[i].indicatorValue = Stock.indicatorManual(
                 listOfStocks[i])
         elif listOfStocks[i].indicatorValue == 'Stock':
-            cprint('Removing ' + listOfStocks[i].name + ' from list of stocks', 'yellow')
+            cprint('Removing ' +
+                   listOfStocks[i].name + ' from list of stocks', 'yellow')
             del listOfStocks[i]
             if len(listOfStocks) < 2:
                 # print('Not able to go to the next step. Ending program')
@@ -1465,7 +1469,8 @@ def indicatorMain(listOfStocks):
                        'white', 'on_red')
                 exit()
         else:
-            listOfStocks[i].indicatorValue = float(listOfStocks[i].indicatorValue)
+            listOfStocks[i].indicatorValue = float(
+                listOfStocks[i].indicatorValue)
             listOfStocksIndicatorValues.append(listOfStocks[i].indicatorValue)
             i = i + 1
 
@@ -1484,7 +1489,8 @@ def indicatorMain(listOfStocks):
             while i < len(listOfStocks):
                 for j in temp[1]:
                     if listOfStocks[i].indicatorValue == j:
-                        cprint('Removing ' + listOfStocks[i].name + ' because it has a ' + str(Stock.indicator.lower()) + ' value of ' + str(listOfStocks[i].indicatorValue), 'yellow')
+                        cprint('Removing ' + listOfStocks[i].name + ' because it has a ' + str(
+                            Stock.indicator.lower()) + ' value of ' + str(listOfStocks[i].indicatorValue), 'yellow')
                         del listOfStocks[i]
                         i = i - 1
                         break
