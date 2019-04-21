@@ -35,12 +35,13 @@ python main.py
 ```
 
 - Common mutual funds are listed in `stocks.txt`
-- Configure and rename `config.example.json` to `config.json` if you would like to skip beginning questions (only for advanced users)
+- Configure and rename `config.example.json` to `config.json` if you would like to skip some beginning questions (only for advanced users)
 
 ## Planned Features
 
 - Graphical user interface (GUI)
 - Multithreading/asynchronous requests
+- Option to change amount to log (DEBUG, INFO, ERRORS)
 
 ## Contributing
 

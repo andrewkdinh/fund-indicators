@@ -83,6 +83,7 @@ class Stock:
     removeOutliers = True
     sourceList = ['Yahoo', 'Alpha Vantage', 'IEX', 'Tiingo']
     plotIndicatorRegression = False
+    timePlotIndicatorRegression = 5 # seconds
     config = 'N/A'
 
     # BENCHMARK VALUES
@@ -169,7 +170,7 @@ class Stock:
             values.append(value)
         listIEX.append(values)
 
-        print(len(listIEX[0]), 'dates and', len(listIEX[1]), "close values")
+        # print(len(listIEX[0]), 'dates and', len(listIEX[1]), "close values")
         return listIEX
 
     def AV(self):
@@ -204,7 +205,7 @@ class Stock:
             values.append(float(value))
         # listAV.append(values)
         listAV.append(list(reversed(values)))
-        print(len(listAV[0]), 'dates and', len(listAV[1]), "close values")
+        # print(len(listAV[0]), 'dates and', len(listAV[1]), "close values")
 
         return listAV
 
@@ -258,8 +259,7 @@ class Stock:
         # Used loop from finding dates
         listTiingo.append(values)
 
-        print(len(listTiingo[0]), 'dates and',
-              len(listTiingo[1]), "close values")
+        # print(len(listTiingo[0]), 'dates and', len(listTiingo[1]), "close values")
         return listTiingo
 
     def Yahoo(self):
@@ -304,8 +304,7 @@ class Stock:
             else:
                 break
 
-        print(len(listYahoo[0]), 'dates and',
-              len(listYahoo[1]), "close values")
+        # print(len(listYahoo[0]), 'dates and', len(listYahoo[1]), "close values")
         return listYahoo
 
     def datesAndClose(self):
@@ -354,7 +353,7 @@ class Stock:
         return datesAndCloseList
 
     def datesAndCloseFitTimeFrame(self):
-        print('\nShortening list to fit time frame')
+        # print('\nShortening list to fit time frame')
         # Have to do this because if I just make dates = self.allDates & closeValues = self.allCloseValues, then deleting from dates & closeValues also deletes it from self.allDates & self.allCloseValues (I'm not sure why)
         dates = []
         closeValues = []
@@ -367,8 +366,7 @@ class Stock:
         # print(self.timeFrame, ' months ago: ', firstDate, sep='')
         closestDate = Functions.getNearest(dates, firstDate)
         if closestDate != firstDate:
-            print('Closest date available for ' +
-                  str(self.name) + ':' + ' ' + str(closestDate))
+            # print('Closest date available to ' + str(self.timeFrame) + ' months ago: ' + str(closestDate))
             firstDate = closestDate
         else:
             print(self.name, 'has a close value for', firstDate)
@@ -780,10 +778,6 @@ class Stock:
             elif Stock.indicator == 'Market Capitalization':
                 indicatorValue = str(
                     input(Stock.indicator + ' of ' + self.name + ': '))
-            else:
-                cprint(
-                    'Something is wrong. Indicator was not found. Ending program', 'white', 'on_red')
-                exit()
 
             if Functions.strintIsFloat(indicatorValue) is True:
                 indicatorValueFound = True
@@ -1250,7 +1244,7 @@ def returnMain(benchmark, listOfStocks):
                    listOfStocks[i].name + ' from list of stocks', 'yellow')
             del listOfStocks[i]
             if len(listOfStocks) == 0:
-                print('No stocks fit time frame. Ending program')
+                # print('No stocks fit time frame. Ending program')
                 cprint('No stocks fit time frame. Ending program',
                        'white', 'on_red')
                 exit()
@@ -1281,7 +1275,7 @@ def returnMain(benchmark, listOfStocks):
            str(len(listOfStocks)), 'green')
     if len(listOfStocks) < 2:
         # print('Cannot proceed to the next step. Exiting program')
-        cprint('Cannot proceed to the next step. Exiting program',
+        cprint('Unable to proceed. Exiting program',
                'white', 'on_red')
         exit()
 
@@ -1400,8 +1394,9 @@ def plot_regression_line(x, y, b, i):
         plt.ylabel(listOfReturnStrings[i])
 
     # function to show plot
+    t = Stock.timePlotIndicatorRegression
     plt.show(block=False)
-    for i in range(3, 0, -1):
+    for i in range(t, 0, -1):
         if i == 1:
             sys.stdout.write('Keeping plot open for ' +
                              str(i) + ' second \r')
@@ -1453,19 +1448,23 @@ def indicatorMain(listOfStocks):
                     listOfStocks[i])
             except:
                 print('Error retrieving indicator data')
-                listOfStocks[i].indicatorValue = 'N/A'
-        print('')
+                print('\nWould you like to enter a ' + str(Stock.indicator) + ' value for ' + str(listOfStocks[i].name) + '?')
+                r = Functions.trueOrFalse()
+                if r is True:
+                    listOfStocks[i].indicatorValue = 'Remove'
+                else:
+                    listOfStocks[i].indicatorValue = 'N/A'
 
         if listOfStocks[i].indicatorValue == 'N/A':
             listOfStocks[i].indicatorValue = Stock.indicatorManual(
                 listOfStocks[i])
-        elif listOfStocks[i].indicatorValue == 'Stock':
+        elif listOfStocks[i].indicatorValue == 'Stock' or listOfStocks[i].indicatorValue == 'Remove':
             cprint('Removing ' +
                    listOfStocks[i].name + ' from list of stocks', 'yellow')
             del listOfStocks[i]
             if len(listOfStocks) < 2:
                 # print('Not able to go to the next step. Ending program')
-                cprint('Not able to go to the next step. Ending program',
+                cprint('Unable to proceed. Ending program',
                        'white', 'on_red')
                 exit()
         else:
@@ -1473,6 +1472,7 @@ def indicatorMain(listOfStocks):
                 listOfStocks[i].indicatorValue)
             listOfStocksIndicatorValues.append(listOfStocks[i].indicatorValue)
             i = i + 1
+        print('')
 
     # Remove outliers
     if Stock.removeOutliers is True:
@@ -1543,7 +1543,7 @@ def indicatorMain(listOfStocks):
     print('\n', end='')
     for i in range(0, len(Stock.indicatorCorrelation), 1):
         formula = ''.join(
-            ('y = ', str(round(float(Stock.indicatorRegression[i][0]), 2)), 'x + ', str(round(float(Stock.indicatorRegression[i][1]), 2))))
+            ('f(x) = ', str(round(float(Stock.indicatorRegression[i][0]), 2)), 'x + ', str(round(float(Stock.indicatorRegression[i][1]), 2))))
         print('Linear regression equation for ' + Stock.indicator.lower() + ' and ' +
               listOfReturnStrings[i].lower() + ': ' + formula)
 
@@ -1574,15 +1574,32 @@ def plotIndicatorRegression():
             print(
                 'matplotlib is not installed. \nIf you would like to install' +
                 ' it (and have a display), run `pip install matplotlib`')
-            return False
+            Stock.plotIndicatorRegression = False
         else:
             print('\nWould you like to plot indicator linear regression '
                   'results?')
             plotLinear = Functions.trueOrFalse()
             if plotLinear is True:
-                return True
+                Stock.plotIndicatorRegression = True
             else:
-                return False
+                Stock.plotIndicatorRegression = False
+    else:
+        Stock.plotIndicatorRegression = False
+
+    # Ask for how long
+    if Stock.plotIndicatorRegression is True:
+        timeFound = False
+        print('')
+        while timeFound is False:
+            x = str(input('How long would you like to keep the graph up (seconds)? '))
+            if Functions.stringIsInt(x) is True:
+                if int(x) > 0:
+                    Stock.timePlotIndicatorRegression = int(x)
+                    timeFound = True
+                else:
+                    print('Please choose a number greater than zero')
+            else:
+                print('Please choose an integer')
 
 
 def main():
@@ -1640,8 +1657,8 @@ def main():
             Stock.removeOutliers = outlierChoice()
 
             # Check if matplotlib is installed and if so, ask user if
-            # they want to plot
-            Stock.plotIndicatorRegression = plotIndicatorRegression()
+            # they want to plot and for how long
+            plotIndicatorRegression()
 
         else:
             if Stock.config['Check Packages'] is not False:
