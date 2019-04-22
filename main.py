@@ -1764,7 +1764,7 @@ def main():
         runningProgram = continueProgram()
         print('')
 
-    print('Goodbye!\n')
+    print('Goodbye!')
     exit()
 
 
