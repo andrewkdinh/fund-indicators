@@ -1,7 +1,29 @@
-# https://github.com/andrewkdinh/fund-indicators
-# Determine indicators of overperforming mutual funds
-# Andrew Dinh
-# Python 3.6.7
+'''
+  __                 _            _           _ _           _                 
+ / _|               | |          (_)         | (_)         | |                
+| |_ _   _ _ __   __| |  ______   _ _ __   __| |_  ___ __ _| |_ ___  _ __ ___ 
+|  _| | | | '_ \ / _` | |______| | | '_ \ / _` | |/ __/ _` | __/ _ \| '__/ __|
+| | | |_| | | | | (_| |          | | | | | (_| | | (_| (_| | || (_) | |  \__ \
+|_|  \__,_|_| |_|\__,_|          |_|_| |_|\__,_|_|\___\__,_|\__\___/|_|  |___/
+                                                                              
+Project homepage: https://github.com/andrewkdinh/fund-indicators
+Author: Andrew Dinh <fund-indicators@andrewkdinh.com>
+
+Copyright (C) 2019 Andrew Dinh
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
 
 # PYTHON FILES
 import Functions
@@ -551,17 +573,24 @@ class Stock:
         plt.ylabel('Close Values')
 
         # function to show plot
-        plt.show(block=False)
-        for i in range(3, 0, -1):
-            if i == 1:
-                sys.stdout.write('Keeping plot open for ' +
-                                 str(i) + ' second \r')
-            else:
-                sys.stdout.write('Keeping plot open for ' +
-                                 str(i) + ' seconds \r')
-            plt.pause(1)
+        try:
+            t = Stock.timePlotIndicatorRegression
+            plt.show(block=False)
+            for i in range(t, 0, -1):
+                if i == 1:
+                    sys.stdout.write('Keeping plot open for ' +
+                                     str(i) + ' second \r')
+                else:
+                    sys.stdout.write('Keeping plot open for ' +
+                                     str(i) + ' seconds \r')
+                plt.pause(1)
+                sys.stdout.flush()
+            sys.stdout.write('                                                 \r')
             sys.stdout.flush()
-        plt.close()
+            plt.close()
+        except:
+            sys.stdout.write('                                                 \r')
+            sys.stdout.flush()
 
     def scrapeYahooFinance(self):
         # Determine if ETF, Mutual fund, or stock
@@ -1394,21 +1423,24 @@ def plot_regression_line(x, y, b, i):
         plt.ylabel(listOfReturnStrings[i])
 
     # function to show plot
-    t = Stock.timePlotIndicatorRegression
-    plt.show(block=False)
-    for i in range(t, 0, -1):
-        if i == 1:
-            sys.stdout.write('Keeping plot open for ' +
-                             str(i) + ' second \r')
-        else:
-            sys.stdout.write('Keeping plot open for ' +
-                             str(i) + ' seconds \r')
-        plt.pause(1)
+    try:
+        t = Stock.timePlotIndicatorRegression
+        plt.show(block=False)
+        for i in range(t, 0, -1):
+            if i == 1:
+                sys.stdout.write('Keeping plot open for ' +
+                                 str(i) + ' second \r')
+            else:
+                sys.stdout.write('Keeping plot open for ' +
+                                 str(i) + ' seconds \r')
+            plt.pause(1)
+            sys.stdout.flush()
+        sys.stdout.write('                                                 \r')
         sys.stdout.flush()
-    sys.stdout.write(
-        '                                                                  \r')
-    sys.stdout.flush()
-    plt.close()
+        plt.close()
+    except:
+        sys.stdout.write('                                                 \r')
+        sys.stdout.flush()
 
 
 def persistenceTimeFrame():
@@ -1612,7 +1644,6 @@ def main():
 
     runningProgram = True
     while runningProgram is True:
-
         if Stock.config == 'N/A':
             # Check that all required packages are installed
             packagesInstalled = Functions.checkPackages(
@@ -1739,20 +1770,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-'''
-Copyright (C) 2019 Andrew Dinh
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
-'''

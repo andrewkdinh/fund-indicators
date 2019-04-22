@@ -1,6 +1,6 @@
 # fund-indicators
 
-[![License](https://img.shields.io/github/license/andrewkdinh/fund-indicators.svg)](https://raw.githubusercontent.com/andrewkdinh/fund-indicators/master/LICENSE)
+[![License](https://img.shields.io/github/license/andrewkdinh/fund-indicators.svg)](./LICENSE)
 [![Latest Commits](https://img.shields.io/github/last-commit/andrewkdinh/fund-indicators.svg)](https://github.com/andrewkdinh/fund-indicators/commits/master)
 ![](https://img.shields.io/github/languages/top/andrewkdinh/fund-indicators.svg)
 ![](https://img.shields.io/github/languages/code-size/andrewkdinh/fund-indicators.svg)
@@ -45,7 +45,7 @@ python main.py
 
 ## Contributing
 
-Want to help? Great! Check out the [CONTRIBUTING.md](https://github.com/andrewkdinh/fund-indicators/blob/master/CONTRIBUTING.md) file!
+Want to help? Great! Check out the [CONTRIBUTING.md](./CONTRIBUTING.md) file!
 
 ## Credits
 
