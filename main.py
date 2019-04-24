@@ -1,11 +1,11 @@
 '''
-  __                 _            _           _ _           _                 
- / _|               | |          (_)         | (_)         | |                
-| |_ _   _ _ __   __| |  ______   _ _ __   __| |_  ___ __ _| |_ ___  _ __ ___ 
+  __                 _            _           _ _           _
+ / _|               | |          (_)         | (_)         | |
+| |_ _   _ _ __   __| |  ______   _ _ __   __| |_  ___ __ _| |_ ___  _ __ ___
 |  _| | | | '_ \ / _` | |______| | | '_ \ / _` | |/ __/ _` | __/ _ \| '__/ __|
 | | | |_| | | | | (_| |          | | | | | (_| | | (_| (_| | || (_) | |  \__ \
 |_|  \__,_|_| |_|\__,_|          |_|_| |_|\__,_|_|\___\__,_|\__\___/|_|  |___/
-                                                                              
+
 Project homepage: https://github.com/andrewkdinh/fund-indicators
 Author: Andrew Dinh <fund-indicators@andrewkdinh.com>
 
@@ -105,7 +105,7 @@ class Stock:
     removeOutliers = True
     sourceList = ['Yahoo', 'Alpha Vantage', 'IEX', 'Tiingo']
     plotIndicatorRegression = False
-    timePlotIndicatorRegression = 5 # seconds
+    timePlotIndicatorRegression = 5  # seconds
     config = 'N/A'
 
     # BENCHMARK VALUES
@@ -162,7 +162,7 @@ class Stock:
         url = ''.join(
             ('https://api.iextrading.com/1.0/stock/', self.name, '/chart/5y'))
         # link = "https://api.iextrading.com/1.0/stock/spy/chart/5y"
-        cprint("Fetch:" + url, 'white', attrs=['dark'])
+        cprint("GET:" + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             f = requests.get(url)
         Functions.fromCache(f)
@@ -201,7 +201,7 @@ class Stock:
                        self.name, '&outputsize=full&apikey=', apiAV))
         # https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=MSFT&outputsize=full&apikey=demo
 
-        cprint("Fetch:" + url, 'white', attrs=['dark'])
+        cprint("GET:" + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             f = requests.get(url)
         Functions.fromCache(f)
@@ -238,7 +238,7 @@ class Stock:
             'Authorization': token
         }
         url = ''.join(('https://api.tiingo.com/tiingo/daily/', self.name))
-        cprint("Fetch:" + url, 'white', attrs=['dark'])
+        cprint("GET:" + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             f = requests.get(url, headers=headers)
         Functions.fromCache(f)
@@ -260,7 +260,7 @@ class Stock:
         url2 = ''.join((url, '/prices?startDate=',
                         firstDate, '&endDate=', lastDate))
         # https://api.tiingo.com/tiingo/daily/<ticker>/prices?startDate=2012-1-1&endDate=2016-1-1
-        cprint("\nFetch:" + url2 + '\n', 'white', attrs=['dark'])
+        cprint("\nGET:" + url2 + '\n', 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             requestResponse2 = requests.get(url2, headers=headers)
         Functions.fromCache(requestResponse2)
@@ -287,7 +287,7 @@ class Stock:
     def Yahoo(self):
         url = ''.join(('https://finance.yahoo.com/quote/',
                        self.name, '?p=', self.name))
-        cprint('Fetch:' + url, 'white', attrs=['dark'])
+        cprint('GET:' + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             t = requests.get(url)
         Functions.fromCache(t)
@@ -585,18 +585,20 @@ class Stock:
                                      str(i) + ' seconds \r')
                 plt.pause(1)
                 sys.stdout.flush()
-            sys.stdout.write('                                                 \r')
+            sys.stdout.write(
+                '                                                 \r')
             sys.stdout.flush()
             plt.close()
         except:
-            sys.stdout.write('                                                 \r')
+            sys.stdout.write(
+                '                                                 \r')
             sys.stdout.flush()
 
     def scrapeYahooFinance(self):
         # Determine if ETF, Mutual fund, or stock
         url = ''.join(('https://finance.yahoo.com/quote/',
                        self.name, '?p=', self.name))
-        cprint('Fetch:' + url, 'white', attrs=['dark'])
+        cprint('GET:' + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             t = requests.get(url)
         Functions.fromCache(t)
@@ -608,7 +610,7 @@ class Stock:
 
         stockType = ''
         url2 = ''.join(('https://finance.yahoo.com/lookup?s=', self.name))
-        cprint('Fetch:' + url2, 'white', attrs=['dark'])
+        cprint('GET:' + url2, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             x = requests.get(url2)
             raw_html = x.text
@@ -766,7 +768,7 @@ class Stock:
                 url = ''.join(('https://finance.yahoo.com/quote/',
                                self.name, '/profile?p=', self.name))
                 # https://finance.yahoo.com/quote/SPY/profile?p=SPY
-                cprint('Fetch:' + url, 'white', attrs=['dark'])
+                cprint('GET:' + url, 'white', attrs=['dark'])
                 with Halo(spinner='dots'):
                     t = requests.get(url)
                 Functions.fromCache(t)
@@ -980,7 +982,7 @@ def stocksInit():
             url = 'https://www.kiplinger.com/tool/investing/T041-S001-top-performing-mutual-funds/index.php'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Fetch:' + url, 'white', attrs=['dark'])
+            cprint('GET:' + url, 'white', attrs=['dark'])
             with Halo(spinner='dots'):
                 f = requests.get(url, headers=headers)
             Functions.fromCache(f)
@@ -1007,7 +1009,7 @@ def stocksInit():
             url = 'https://www.thestreet.com/topic/21421/top-rated-mutual-funds.html'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Fetch:' + url, 'white', attrs=['dark'])
+            cprint('GET:' + url, 'white', attrs=['dark'])
             with Halo(spinner='dots'):
                 f = requests.get(url, headers=headers)
             Functions.fromCache(f)
@@ -1037,7 +1039,7 @@ def stocksInit():
             url = 'http://money.com/money/4616747/best-mutual-funds-etfs-money-50/'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Fetch:' + url, 'white', attrs=['dark'])
+            cprint('GET:' + url, 'white', attrs=['dark'])
             with Halo(spinner='dots'):
                 f = requests.get(url, headers=headers)
             Functions.fromCache(f)
@@ -1070,7 +1072,7 @@ def stocksInit():
             url = 'https://www.investors.com/etfs-and-funds/mutual-funds/best-mutual-funds-beating-sp-500-over-last-1-3-5-10-years/'
             headers = {
                 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.109 Safari/537.36'}
-            cprint('Fetch:' + url, 'white', attrs=['dark'])
+            cprint('GET:' + url, 'white', attrs=['dark'])
             with Halo(spinner='dots'):
                 f = requests.get(url, headers=headers)
             Functions.fromCache(f)
@@ -1147,7 +1149,7 @@ def asyncData(benchmark, listOfStocks):
 
 def sendAsync(url):
     time.sleep(random.randrange(0, 2))
-    cprint('Fetch:' + url, 'white', attrs=['dark'])
+    cprint('GET:' + url, 'white', attrs=['dark'])
     requests.get(url)
     return
 
@@ -1210,7 +1212,7 @@ def riskFreeRate():
         ('https://www.quandl.com/api/v3/datasets/USTREASURY/LONGTERMRATES.json?api_key=', apiQuandl))
     # https://www.quandl.com/api/v3/datasets/USTREASURY/LONGTERMRATES.json?api_key=KUh3U3hxke9tCimjhWEF
 
-    cprint('\nFetch:' + url, 'white', attrs=['dark'])
+    cprint('\nGET:' + url, 'white', attrs=['dark'])
     with Halo(spinner='dots'):
         f = requests.get(url)
     Functions.fromCache(f)
@@ -1480,9 +1482,10 @@ def indicatorMain(listOfStocks):
                     listOfStocks[i])
             except:
                 print('Error retrieving indicator data')
-                print('\nWould you like to enter a ' + str(Stock.indicator) + ' value for ' + str(listOfStocks[i].name) + '?')
+                print('\nWould you like to enter a ' + str(Stock.indicator.lower()
+                                                           ) + ' value for ' + str(listOfStocks[i].name) + '?')
                 r = Functions.trueOrFalse()
-                if r is True:
+                if r is False:
                     listOfStocks[i].indicatorValue = 'Remove'
                 else:
                     listOfStocks[i].indicatorValue = 'N/A'
@@ -1764,7 +1767,7 @@ def main():
         runningProgram = continueProgram()
         print('')
 
-    print('Goodbye!')
+    print('Goodbye!\n')
     exit()
 
 

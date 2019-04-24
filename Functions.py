@@ -96,7 +96,7 @@ def getJoke():
                    'User-Agent': 'fund-indicators (https://github.com/andrewkdinh/fund-indicators)'}
         url = 'https://icanhazdadjoke.com'
 
-        cprint('Fetch:' + url, 'white', attrs=['dark'])
+        cprint('GET:' + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             f = requests.get(url,
                              headers=headers).json()
@@ -226,7 +226,7 @@ def getWeather():
     with requests_cache.disabled():
         url = 'https://wttr.in?format=3'
 
-        cprint('Fetch:' + url, 'white', attrs=['dark'])
+        cprint('GET:' + url, 'white', attrs=['dark'])
         with Halo(spinner='dots'):
             f = requests.get(url)
         print('')
