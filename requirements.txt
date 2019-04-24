@@ -3,3 +3,4 @@ numpy~=1.15.4
 beautifulsoup4~=4.7.1
 halo~=0.0.23
 requests-cache~=0.4.13 # NOT REQUIRED
+pytz~=2019.1
