@@ -741,7 +741,7 @@ class Stock:
             print(' =', marketCap)
             marketCap = marketCap / 1000000
             print(
-                'Dividing marketCap by 1 million (to work with linear regression module):', marketCap)
+                'Dividing marketCap by 1 million:', marketCap)
             return marketCap
 
         elif Stock.indicator == 'Turnover':
@@ -1622,6 +1622,8 @@ def plotIndicatorRegression():
         Stock.plotIndicatorRegression = False
 
     # Ask for how long
+    Stock.timePlotIndicatorRegression = 60
+    '''
     if Stock.plotIndicatorRegression is True:
         timeFound = False
         print('')
@@ -1635,6 +1637,7 @@ def plotIndicatorRegression():
                     print('Please choose a number greater than zero')
             else:
                 print('Please choose an integer')
+    '''
 
 
 def main():
