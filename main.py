@@ -1218,9 +1218,7 @@ def riskFreeRate():
     Functions.fromCache(f)
     json_data = f.text
     loaded_json = json.loads(json_data)
-    riskFreeRate = (loaded_json['dataset']['data'][0][1])/100
-    riskFreeRate = riskFreeRate * 100
-    riskFreeRate = round(riskFreeRate, 2)
+    riskFreeRate = round(float(loaded_json['dataset']['data'][0][1])),2)
     print('Risk-free rate:', riskFreeRate, end='\n\n')
 
     if f.status_code != 200:
