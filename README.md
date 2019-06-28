@@ -19,7 +19,7 @@ fund-indicators is a cross-platform Python application that allows users to easi
 - Color-coded for easy viewing
 - Optional graphs to easily visualize linear regression results
 - A new joke every time
-- Cross-platform (tested on Windows and Linux)
+- Cross-platform (tested on Windows, MacOS, & Linux)
 
 ## Quickstart
 
