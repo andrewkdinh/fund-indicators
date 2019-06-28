@@ -80,7 +80,7 @@ API Keys:
         Monthly Bandwidth = 5 GB
         Hourly Requests = 500
         Daily Requests = 20,000
-        Symbol Requests = 500
+        Symbol Requests  = 500
     Quandl API Key: KUh3U3hxke9tCimjhWEF
     Intrinio API Key: OmNmN2E5YWI1YzYxN2Q4NzEzZDhhOTgwN2E2NWRhOWNl
 
@@ -1218,7 +1218,7 @@ def riskFreeRate():
     Functions.fromCache(f)
     json_data = f.text
     loaded_json = json.loads(json_data)
-    riskFreeRate = round(float(loaded_json['dataset']['data'][0][1])),2)
+    riskFreeRate = round(float(loaded_json['dataset']['data'][0][1]),2)
     print('Risk-free rate:', riskFreeRate, end='\n\n')
 
     if f.status_code != 200:
