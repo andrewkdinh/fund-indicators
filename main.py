@@ -317,7 +317,7 @@ class Stock:
         # Sometimes close value is a None value
         i = 0
         while i < len(listYahoo[1]):
-            if Functions.listIndexExists(listYahoo[1][i]) is True:
+            if Functions.listIndexExists(listYahoo[1][i]):
                 if listYahoo[1][i] is None:
                     del listYahoo[1][i]
                     del listYahoo[0][i]
@@ -723,7 +723,7 @@ class Stock:
                         break
                 if marketCap == 0:
                     somethingWrong = True
-            if somethingWrong is True:
+            if somethingWrong:
                 ticker = self.name
                 yahoo_financials = YahooFinancials(ticker)
                 marketCap = yahoo_financials.get_market_cap()
@@ -810,7 +810,7 @@ class Stock:
                 indicatorValue = str(
                     input(Stock.indicator + ' of ' + self.name + ': '))
 
-            if Functions.strintIsFloat(indicatorValue) is True:
+            if Functions.strintIsFloat(indicatorValue):
                 indicatorValueFound = True
                 return float(indicatorValue)
             else:
@@ -850,7 +850,7 @@ def benchmarkInit():
         benchmark = str(input('Please choose a benchmark from the list: '))
         # benchmark = 'SPY' # TESTING
 
-        if Functions.stringIsInt(benchmark) is True:
+        if Functions.stringIsInt(benchmark):
             if int(benchmark) <= len(benchmarks) and int(benchmark) > 0:
                 benchmarkInt = int(benchmark)
                 benchmark = benchmarks[benchmarkInt-1]
@@ -896,7 +896,7 @@ def stocksInit():
             print('[' + str(i+1) + '] ' + methods[i])
         while method == 0 or method > len(methods):
             method = str(input('Which method? '))
-            if Functions.stringIsInt(method) is True:
+            if Functions.stringIsInt(method):
                 method = int(method)
                 if method == 0 or method > len(methods):
                     print('Please choose a number from 1 to', len(methods))
@@ -924,11 +924,11 @@ def stocksInit():
                     print('[' + str(i+1) + '] ' + listOfFiles[i])
             while stocksFound is False:
                 fileName = str(input('What is the file number/name? '))
-                if Functions.stringIsInt(fileName) is True:
+                if Functions.stringIsInt(fileName):
                     if int(fileName) < len(listOfFiles)+1 and int(fileName) > 0:
                         fileName = listOfFiles[int(fileName)-1]
                         print(fileName)
-                if Functions.fileExists(fileName) is True:
+                if Functions.fileExists(fileName):
                     listOfStocks = []
                     file = open(fileName, 'r')
                     n = file.read()
@@ -954,7 +954,7 @@ def stocksInit():
             while isInteger is False:
                 temp = input('Number of stocks to analyze (2 minimum): ')
                 isInteger = Functions.stringIsInt(temp)
-                if isInteger is True:
+                if isInteger:
                     if int(temp) >= 2:
                         numberOfStocks = int(temp)
                     else:
@@ -1162,7 +1162,7 @@ def timeFrameInit():
             'Please enter the time frame in months (<60 recommended):', end='')
         temp = input(' ')
         isInteger = Functions.stringIsInt(temp)
-        if isInteger is True:
+        if isInteger:
             if int(temp) > 1 and int(temp) < 1000:
                 months = int(temp)
             elif int(temp) >= 1000:
@@ -1328,7 +1328,7 @@ def indicatorInit():
 
         # indicator = 'expense ratio' # TESTING
 
-        if Functions.stringIsInt(indicator) is True:
+        if Functions.stringIsInt(indicator):
             if int(indicator) <= 4 and int(indicator) > 0:
                 indicator = listOfIndicators[int(indicator)-1]
                 indicatorFound = True
@@ -1386,7 +1386,7 @@ def calcIndicatorRegression(listOfIndicatorValues, listOfReturns):
         regression.append(b[1])
         regressionList.append(regression)
 
-        if Stock.plotIndicatorRegression is True:
+        if Stock.plotIndicatorRegression:
             plot_regression_line(x, y, b, i)
 
     return regressionList
@@ -1449,7 +1449,7 @@ def persistenceTimeFrame():
     while persTimeFrameFound is False:
         persistenceTimeFrame = str(
             input('Please choose how many months to measure persistence: '))
-        if Functions.stringIsInt(persistenceTimeFrame) is True:
+        if Functions.stringIsInt(persistenceTimeFrame):
             if int(persistenceTimeFrame) > 0 and int(persistenceTimeFrame) < Stock.timeFrame - 1:
                 persistenceTimeFrame = int(persistenceTimeFrame)
                 persTimeFrameFound = True
@@ -1508,7 +1508,7 @@ def indicatorMain(listOfStocks):
         print('')
 
     # Remove outliers
-    if Stock.removeOutliers is True:
+    if Stock.removeOutliers:
         cprint('\nRemoving outliers\n', 'white', attrs=['underline'])
         temp = Functions.removeOutliers(listOfStocksIndicatorValues)
         if temp[0] == listOfStocksIndicatorValues:
@@ -1602,7 +1602,7 @@ def continueProgram():
 
 
 def plotIndicatorRegression():
-    if Functions.detectDisplay() is True:
+    if Functions.detectDisplay():
         if Functions.checkPackage('matplotlib') is False:
             print(
                 'matplotlib is not installed. \nIf you would like to install' +
@@ -1612,7 +1612,7 @@ def plotIndicatorRegression():
             print('\nWould you like to plot indicator linear regression '
                   'results?')
             plotLinear = Functions.trueOrFalse()
-            if plotLinear is True:
+            if plotLinear:
                 Stock.plotIndicatorRegression = True
             else:
                 Stock.plotIndicatorRegression = False
@@ -1622,12 +1622,12 @@ def plotIndicatorRegression():
     # Ask for how long
     Stock.timePlotIndicatorRegression = 60
     '''
-    if Stock.plotIndicatorRegression is True:
+    if Stock.plotIndicatorRegression:
         timeFound = False
         print('')
         while timeFound is False:
             x = str(input('How long would you like to keep the graph up (seconds)? '))
-            if Functions.stringIsInt(x) is True:
+            if Functions.stringIsInt(x):
                 if int(x) > 0:
                     Stock.timePlotIndicatorRegression = int(x)
                     timeFound = True
@@ -1647,7 +1647,7 @@ def main():
     Stock.config = checkConfig('config.json')
 
     runningProgram = True
-    while runningProgram is True:
+    while runningProgram:
         if Stock.config == 'N/A':
             # Check that all required packages are installed
             packagesInstalled = Functions.checkPackages(

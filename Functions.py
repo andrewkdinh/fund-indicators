@@ -152,6 +152,7 @@ def isConnected():
     import socket  # To check internet connection
     try:
         # connect to the host -- tells us if the host is actually reachable
+        socket.setdefaulttimeout(5)
         socket.create_connection(('1.1.1.1', 53))
         print('Internet connection is good')
         return True
