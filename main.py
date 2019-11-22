@@ -377,11 +377,8 @@ class Stock:
     def datesAndCloseFitTimeFrame(self):
         # print('\nShortening list to fit time frame')
         # Have to do this because if I just make dates = self.allDates & closeValues = self.allCloseValues, then deleting from dates & closeValues also deletes it from self.allDates & self.allCloseValues (I'm not sure why)
-        dates = []
-        closeValues = []
-        for i in range(0, len(self.allDates), 1):
-            dates.append(self.allDates[i])
-            closeValues.append(self.allCloseValues[i])
+        dates = list(self.allDates)
+        closeValues = list(self.allCloseValues)
 
         firstDate = datetime.datetime.now().date() - datetime.timedelta(
             days=self.timeFrame*30)
@@ -909,8 +906,8 @@ def stocksInit():
             defaultFiles = ['.gitignore', 'LICENSE', 'main.py', 'Functions.py',
                             'README.md', 'requirements.txt', 'cache.sqlite',
                             'config.json', 'CONTRIBUTING.md',
-                            'config.example.json', '_test_runner.py',
-                            'CODE-OF-CONDUCT.md']
+                            'config.example.json', 'CODE-OF-CONDUCT.md', 
+                            '_test_runner.py', 'poetry.lock', 'pyproject.toml']
             # Added by repl.it for whatever reason
             stocksFound = False
             print('Files in current directory (without default files): ')
