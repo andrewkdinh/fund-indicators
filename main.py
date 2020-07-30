@@ -321,8 +321,8 @@ class Stock:
                 if listYahoo[1][i] is None:
                     del listYahoo[1][i]
                     del listYahoo[0][i]
-                    i = i - 1
-                i = i + 1
+                    i -= 1
+                i += 1
             else:
                 break
 
@@ -398,10 +398,7 @@ class Stock:
         while len(closeValues) != len(dates):
             closeValues.remove(closeValues[0])
 
-        datesAndCloseList2 = []
-        datesAndCloseList2.append(dates)
-        datesAndCloseList2.append(closeValues)
-
+        datesAndCloseList2 = [dates, closeValues]
         print(len(dates), 'dates and', len(closeValues), 'close values')
         return datesAndCloseList2
 
@@ -742,25 +739,6 @@ class Stock:
             return marketCap
 
         elif Stock.indicator == 'Turnover':
-            if stockType == 'Stock':
-                print(self.name, 'is a stock, and therefore does not have turnover')
-                return 'Stock'
-
-            if stockType == 'Mutual Fund':
-                raw_html = t.text
-                soup = BeautifulSoup(raw_html, 'html.parser')
-
-                r = soup.find_all(
-                    'span', attrs={'class': 'Trsdu(0.3s)'})
-                if r == []:
-                    print('Something went wrong without scraping turnover')
-                    return 'N/A'
-                turnover = 0
-                for i in range(len(r)-1, 0, -1):
-                    s = r[i].text.strip()
-                    if s[-1] == '%':
-                        turnover = float(s.replace('%', ''))
-                        break
             if stockType == 'ETF':
                 url = ''.join(('https://finance.yahoo.com/quote/',
                                self.name, '/profile?p=', self.name))
@@ -784,6 +762,25 @@ class Stock:
                         turnover = float(s.replace('%', ''))
                         break
 
+            elif stockType == 'Mutual Fund':
+                raw_html = t.text
+                soup = BeautifulSoup(raw_html, 'html.parser')
+
+                r = soup.find_all(
+                    'span', attrs={'class': 'Trsdu(0.3s)'})
+                if r == []:
+                    print('Something went wrong without scraping turnover')
+                    return 'N/A'
+                turnover = 0
+                for i in range(len(r)-1, 0, -1):
+                    s = r[i].text.strip()
+                    if s[-1] == '%':
+                        turnover = float(s.replace('%', ''))
+                        break
+            elif stockType == 'Stock':
+                print(self.name, 'is a stock, and therefore does not have turnover')
+                return 'Stock'
+
             if turnover == 0:
                 print('Something went wrong with scraping turnover')
                 return 'N/A'
@@ -793,20 +790,20 @@ class Stock:
 
     def indicatorManual(self):
         indicatorValueFound = False
-        while indicatorValueFound is False:
+        while not indicatorValueFound:
             if Stock.indicator == 'Expense Ratio':
                 indicatorValue = str(
                     input(Stock.indicator + ' for ' + self.name + ' (%): '))
+            elif Stock.indicator == 'Market Capitalization':
+                indicatorValue = str(
+                    input(Stock.indicator + ' of ' + self.name + ': '))
+
             elif Stock.indicator == 'Persistence':
                 indicatorValue = str(
                     input(Stock.indicator + ' for ' + self.name + ' (years): '))
             elif Stock.indicator == 'Turnover':
                 indicatorValue = str(input(
                     Stock.indicator + ' for ' + self.name + ' in the last ' + str(Stock.timeFrame) + ' years: '))
-            elif Stock.indicator == 'Market Capitalization':
-                indicatorValue = str(
-                    input(Stock.indicator + ' of ' + self.name + ': '))
-
             if Functions.strintIsFloat(indicatorValue):
                 indicatorValueFound = True
                 return float(indicatorValue)
@@ -880,15 +877,15 @@ def stocksInit():
     print('For simplicity, all of them will be referred to as "stock"')
 
     found = False
-    while found is False:
+    methods = ['Read from a file', 'Enter manually',
+               'Kiplinger top-performing funds (50)',
+               'TheStreet top-rated mutual funds (20)',
+               'Money best mutual funds (50)',
+               'Investors Business Daily best mutual funds (~45)']
+
+    while not found:
         print('\nMethods:')
         method = 0
-        methods = ['Read from a file', 'Enter manually',
-                   'Kiplinger top-performing funds (50)',
-                   'TheStreet top-rated mutual funds (20)',
-                   'Money best mutual funds (50)',
-                   'Investors Business Daily best mutual funds (~45)']
-
         for i in range(0, len(methods), 1):
             print('[' + str(i+1) + '] ' + methods[i])
         while method == 0 or method > len(methods):
@@ -919,12 +916,15 @@ def stocksInit():
             for i in range(0, len(listOfFiles), 1):
                 if listOfFiles[i][0] != '.':
                     print('[' + str(i+1) + '] ' + listOfFiles[i])
-            while stocksFound is False:
+            while not stocksFound:
                 fileName = str(input('What is the file number/name? '))
-                if Functions.stringIsInt(fileName):
-                    if int(fileName) < len(listOfFiles)+1 and int(fileName) > 0:
-                        fileName = listOfFiles[int(fileName)-1]
-                        print(fileName)
+                if (
+                    Functions.stringIsInt(fileName)
+                    and int(fileName) < len(listOfFiles) + 1
+                    and int(fileName) > 0
+                ):
+                    fileName = listOfFiles[int(fileName)-1]
+                    print(fileName)
                 if Functions.fileExists(fileName):
                     listOfStocks = []
                     file = open(fileName, 'r')
@@ -948,7 +948,7 @@ def stocksInit():
 
         elif method == 2:
             isInteger = False
-            while isInteger is False:
+            while not isInteger:
                 temp = input('Number of stocks to analyze (2 minimum): ')
                 isInteger = Functions.stringIsInt(temp)
                 if isInteger:
@@ -1081,13 +1081,16 @@ def stocksInit():
 
             for k in r:
                 t = k.text.strip()
-                if len(t) == 5 and Functions.strintIsFloat(t) is False:
-                    if t not in listOfStocksOriginal or listOfStocksOriginal == []:
-                        if t[-1] != '%':
-                            listOfStocksOriginal.append(t)
-                            print(t, end=' ')
-                            listOfStocks.append(k.text.strip())
-                            file.write(str(k.text.strip()) + '\n')
+                if (
+                    len(t) == 5
+                    and Functions.strintIsFloat(t) is False
+                    and (t not in listOfStocksOriginal or listOfStocksOriginal == [])
+                    and t[-1] != '%'
+                ):
+                    listOfStocksOriginal.append(t)
+                    print(t, end=' ')
+                    listOfStocks.append(k.text.strip())
+                    file.write(str(k.text.strip()) + '\n')
             file.close()
 
             for i in range(0, len(listOfStocks), 1):
@@ -1154,7 +1157,7 @@ def sendAsync(url):
 def timeFrameInit():
     isInteger = False
     print('')
-    while isInteger is False:
+    while not isInteger:
         print(
             'Please enter the time frame in months (<60 recommended):', end='')
         temp = input(' ')
@@ -1171,8 +1174,7 @@ def timeFrameInit():
         else:
             print('Please type an integer')
 
-    timeFrame = months
-    return timeFrame
+    return months
 
 
 def dataMain(listOfStocks):
@@ -1378,9 +1380,7 @@ def calcIndicatorRegression(listOfIndicatorValues, listOfReturns):
 
         b = [b_0, b_1]
 
-        regression = []
-        regression.append(b[0])
-        regression.append(b[1])
+        regression = [b[0], b[1]]
         regressionList.append(regression)
 
         if Stock.plotIndicatorRegression:
@@ -1405,7 +1405,7 @@ def plot_regression_line(x, y, b, i):
                            'Sharpe Ratio', 'Sortino Ratio', 'Treynor Ratio', 'Alpha']
 
     plt.title(Stock.indicator + ' and ' + listOfReturnStrings[i])
-    if Stock.indicator == 'Expense Ratio' or Stock.indicator == 'Turnover':
+    if Stock.indicator in ['Expense Ratio', 'Turnover']:
         plt.xlabel(Stock.indicator + ' (%)')
     elif Stock.indicator == 'Persistence':
         plt.xlabel(Stock.indicator + ' (Difference in average monthly return)')
@@ -1443,7 +1443,7 @@ def plot_regression_line(x, y, b, i):
 def persistenceTimeFrame():
     print('\nTime frame you chose was', Stock.timeFrame, 'months')
     persTimeFrameFound = False
-    while persTimeFrameFound is False:
+    while not persTimeFrameFound:
         persistenceTimeFrame = str(
             input('Please choose how many months to measure persistence: '))
         if Functions.stringIsInt(persistenceTimeFrame):
@@ -1480,15 +1480,11 @@ def indicatorMain(listOfStocks):
                 print('\nWould you like to enter a ' + str(Stock.indicator.lower()
                                                            ) + ' value for ' + str(listOfStocks[i].name) + '?')
                 r = Functions.trueOrFalse()
-                if r is False:
-                    listOfStocks[i].indicatorValue = 'Remove'
-                else:
-                    listOfStocks[i].indicatorValue = 'N/A'
-
+                listOfStocks[i].indicatorValue = 'Remove' if r is False else 'N/A'
         if listOfStocks[i].indicatorValue == 'N/A':
             listOfStocks[i].indicatorValue = Stock.indicatorManual(
                 listOfStocks[i])
-        elif listOfStocks[i].indicatorValue == 'Stock' or listOfStocks[i].indicatorValue == 'Remove':
+        elif listOfStocks[i].indicatorValue in ['Stock', 'Remove']:
             cprint('Removing ' +
                    listOfStocks[i].name + ' from list of stocks', 'yellow')
             del listOfStocks[i]
@@ -1501,7 +1497,7 @@ def indicatorMain(listOfStocks):
             listOfStocks[i].indicatorValue = float(
                 listOfStocks[i].indicatorValue)
             listOfStocksIndicatorValues.append(listOfStocks[i].indicatorValue)
-            i = i + 1
+            i += 1
         print('')
 
     # Remove outliers
@@ -1522,7 +1518,7 @@ def indicatorMain(listOfStocks):
                         cprint('Removing ' + listOfStocks[i].name + ' because it has a ' + str(
                             Stock.indicator.lower()) + ' value of ' + str(listOfStocks[i].indicatorValue), 'yellow')
                         del listOfStocks[i]
-                        i = i - 1
+                        i -= 1
                         break
                 i += 1
             # print('New list:', listOfStocksIndicatorValues, '\n')
@@ -1588,8 +1584,7 @@ def checkConfig(fileName):
         print('Config file is not valid')
         return 'N/A'
     t = json.loads(n)
-    r = t['Config']
-    return r
+    return t['Config']
 
 
 def continueProgram():
@@ -1609,10 +1604,7 @@ def plotIndicatorRegression():
             print('\nWould you like to plot indicator linear regression '
                   'results?')
             plotLinear = Functions.trueOrFalse()
-            if plotLinear:
-                Stock.plotIndicatorRegression = True
-            else:
-                Stock.plotIndicatorRegression = False
+            Stock.plotIndicatorRegression = plotLinear
     else:
         Stock.plotIndicatorRegression = False
 

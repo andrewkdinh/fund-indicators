@@ -6,7 +6,9 @@
 ![](https://img.shields.io/github/languages/code-size/andrewkdinh/fund-indicators.svg)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2667/badge)](https://bestpractices.coreinfrastructure.org/projects/2667)
 
-fund-indicators is a cross-platform Python application that allows users to easily find relationships between various attributes of mutual funds and previous performance. This project is based on research from [*Performance Indicators of Mutual Funds*](https://nextcloud.andrewkdinh.com/s/MBJ6q6t26LAXfZY).
+fund-indicators is a cross-platform Python application that allows users to easily find relationships between various attributes of mutual funds and previous performance. This project is based on research from [*Performance Indicators of Mutual Funds*](./Performance_Indicators_of_Mutual_Funds.pdf).
+
+**NOTE:** This program is no longer functional nor actively developed.
 
 [![asciicast demo](https://asciinema.org/a/jLmZapnMFGCRiiSUITY21erLW.svg)](https://asciinema.org/a/jLmZapnMFGCRiiSUITY21erLW?autoplay=1&preload=1)
 
