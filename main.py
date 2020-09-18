@@ -1588,7 +1588,6 @@ def checkConfig(fileName):
 
 
 def continueProgram():
-    found = False
     print('Would you like to rerun the program?')
     return Functions.trueOrFalse()
 
