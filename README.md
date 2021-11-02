@@ -25,14 +25,14 @@ fund-indicators is a cross-platform Python application that allows users to easi
 
 ## Quickstart
 
-Give it a try at [repl.run](https://fund-indicators.andrewkdinh.repl.run) or [repl.it](https://repl.it/@andrewkdinh/fund-indicators).
+Give it a try at [Replit](https://replit.com/@andrewkdinh/fund-indicators).
 
 If you would like to clone to your own machine:
 
 ```shell
 git clone https://github.com/andrewkdinh/fund-indicators.git
 cd fund-indicators
-pip install -r requirements.txt
+pip install -r --user requirements.txt
 python main.py
 ```
 
